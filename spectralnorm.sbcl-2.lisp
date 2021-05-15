@@ -38,7 +38,7 @@
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (make-f64.4 (aref src 0) (aref src 0) (aref src 0) (aref src 0))
 	for i from begin below end by 4
-	do (let* ((%eAt  (eval-A (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)) (make-f64.2 0 0)))
+	do (let* ((%eAt  (eval-A (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)) (make-f64.4 0 0 0 0)))
 		  (%sum  (f64.4/ %src0 %eAt))
 		  (%ti   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
 		  (%last %eAt))
@@ -54,7 +54,7 @@
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (make-f64.4 (aref src 0) (aref src 0) (aref src 0) (aref src 0))
 	for i from begin below end by 4
-        do (let* ((%eA   (eval-A (make-f64.2 0 0) (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3))))
+        do (let* ((%eA   (eval-A (make-f64.4 0 0 0 0) (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3))))
 		  (%sum  (f64.4/ %src0 %eA))
 		  (%ti   (make-f64.4 (+ i 1) (+ i 2) (+ i 3) (+ i 4)))
 		  (%last %eA))
