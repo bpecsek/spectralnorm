@@ -100,19 +100,6 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-;; (declaim (ftype (function (int31) d+) spectralnorm))
-;; (defun spectralnorm (n)
-;;   (let ((u (make-array (+ n 3) :element-type 'd+))
-;;         (v (make-array (+ n 3) :element-type 'd+))
-;;         (tmp (make-array (+ n 3) :element-type 'd+)))
-;;     (declare (type d+array u v tmp))
-;;     (loop for i below n do
-;;       (setf (aref u i) 1d0))
-;;     (loop repeat 10 do
-;;       (eval-AtA-times-u u v tmp 0 n n)
-;;       (eval-AtA-times-u v u tmp 0 n n))
-;;     (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
-
 (declaim (ftype (function (int31) d+) spectralnorm))
 (defun spectralnorm (n)
   (let ((u (make-array (+ n 3) :element-type 'd+ :initial-element 1.0d0))
