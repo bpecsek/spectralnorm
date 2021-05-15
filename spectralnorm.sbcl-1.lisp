@@ -73,8 +73,7 @@
   (progn (define-alien-routine sysconf long (name int))
          (sysconf 84)))
 
-(declaim (ftype (function (int31 int31 function) null)
-                execute-parallel execute-serial))
+(declaim (ftype (function (int31 int31 function) null) execute-parallel))
 #+sb-thread
 (defun execute-parallel (start end function)
   (declare (optimize (speed 0)))
@@ -100,19 +99,6 @@
 				      (eval-A-times-u src tmp start end N)))
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
-
-;; (declaim (ftype (function (int31) d+) spectralnorm))
-;; (defun spectralnorm (n)
-;;   (let ((u (make-array (+ n 1) :element-type 'd+))
-;;         (v (make-array (+ n 1) :element-type 'd+))
-;;         (tmp (make-array (+ n 1) :element-type 'd+)))
-;;     (declare (type d+array u v tmp))
-;;     (loop for i below n do
-;;       (setf (aref u i) 1d0))
-;;     (loop repeat 10 do
-;;       (eval-AtA-times-u u v tmp 0 n n)
-;;       (eval-AtA-times-u v u tmp 0 n n))
-;;     (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
 
 (declaim (ftype (function (int31) d+) spectralnorm))
 (defun spectralnorm (n)
