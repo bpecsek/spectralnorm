@@ -22,22 +22,33 @@
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (ql:quickload :sb-simd :silent t)
-(use-package :sb-simd-avx)
+
+(defpackage #:spectralnorm4
+  (:use #:cl #:sb-simd-avx) 
+  (:nicknames #:sn4)
+  (:import-from #:cl-user #:define-alien-routine
+                          #:long
+                          #:int)
+  (:export #:main
+           #:spectralnorm))
+
+(in-package #:spectralnorm4)
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
 (defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f64.4+ ,%i (f64.4-broadcast 1)))
+  `(let* ((%i+1   (f64.4+ ,%i (f64.4-broadcast 1d0)))
           (%i+j   (f64.4+ ,%i ,%j))
           (%i+j+1 (f64.4+ %i+1 ,%j)))
-     (f64.4+ (f64.4* (f64.4* %i+j %i+j+1) (f64.4-broadcast 0.5)) %i+1)))
+     (f64.4+ (f64.4* (f64.4* %i+j %i+j+1) (f64.4-broadcast 0.5d0)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null) Eval-A-times-u Eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4-broadcast (aref src 0))
+        with %0.0  of-type f64.4 = (f64.4-broadcast 0d0)
 	for i of-type uint31 from begin below end by 8
-	do (let* ((%eAt0  (eval-A (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)) (f64.4-broadcast 0)))
-		  (%eAt1  (eval-A (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7)) (f64.4-broadcast 0)))
+	do (let* ((%eAt0  (eval-A (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)) %0.0))
+		  (%eAt1  (eval-A (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7)) %0.0))
 		  (%sum1  (f64.4/ %src0 %eAt0))
 		  (%sum2  (f64.4/ %src0 %eAt1))
 		  (%ti1   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
@@ -59,9 +70,10 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4-broadcast (aref src 0))
+        with %0.0  of-type f64.4 = (f64.4-broadcast 0d0)
 	for i of-type uint31 from begin below end by 8
-        do (let* ((%eA0   (eval-A (f64.4-broadcast 0) (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3))))
-		  (%eA1   (eval-A (f64.4-broadcast 0) (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7))))
+        do (let* ((%eA0   (eval-A %0.0 (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3))))
+		  (%eA1   (eval-A %0.0 (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7))))
 		  (%sum1  (f64.4/ %src0 %eA0))
 		  (%sum2  (f64.4/ %src0 %eA1))
 		  (%ti1   (make-f64.4 (+ i 1) (+ i 2) (+ i 3) (+ i 4)))
@@ -81,7 +93,7 @@
 	     (setf (f64.4-aref dst i) %sum1)
 	     (setf (f64.4-aref dst (+ i 4)) %sum2))))
 
-(declaim (ftype (function () (integer 1 256)) GetThreadCount))
+(declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
 (defun get-thread-count ()
   (progn (define-alien-routine sysconf long (name int))
@@ -123,8 +135,8 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (sqrt (the d+ (/ (f64.4-vdot u v)
-                     (f64.4-vdot v v))))))
+    (sqrt (the f64 (/ (f64.4-vdot u v)
+                      (f64.4-vdot v v))))))
 
 
 (declaim (ftype (function (&optional uint31) null) main))

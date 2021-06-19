@@ -22,37 +22,45 @@
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (ql:quickload :sb-simd :silent t)
-(use-package :sb-simd)
 
-(deftype int31 (&optional (bits 31)) `(signed-byte ,bits))
-(deftype d+array () '(simple-array (double-float 0d0) (*)))
-(deftype d+ () '(double-float 0d0))
+(defpackage #:spectralnorm41
+  (:use #:cl #:sb-simd-avx2) 
+  (:nicknames #:sn41)
+  (:import-from #:cl-user #:define-alien-routine
+                          #:long
+                          #:int)
+  (:export #:main
+           #:spectralnorm))
+
+(in-package #:spectralnorm41)
+
+(deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
 (defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f32.8+ ,%i (f32.8-broadcast 1d0)))
-          (%i+j   (f32.8+ ,%i ,%j))
-          (%i+j+1 (f32.8+ %i+1 ,%j))
-          (evala  (f32.8+ (f32.8/ (f32.8* %i+j %i+j+1)
-                                  (f32.8-broadcast 2d0)) %i+1)))
-     (values (f64.4-from-f32.4 (f32.8-extractf128 evala 0))
-             (f64.4-from-f32.4 (f32.8-extractf128 evala 1)))))
+  `(let* ((%i+1   (s32.8+ ,%i (s32.8-broadcast 1)))
+          (%i+j   (s32.8+ ,%i ,%j))
+          (%i+j+1 (s32.8+ %i+1 ,%j))
+          (evala  (s32.8+ (s32.8-shiftr (s32.8-mullo %i+j %i+j+1)
+                                        1) %i+1)))
+     (values (f64.4-from-s32.4 (s32.8-extracti128 evala 0))
+             (f64.4-from-s32.4 (s32.8-extracti128 evala 1)))))
 
-(declaim (ftype (function (d+array d+array int31 int31 int31) null)
+(declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
                 Eval-A-times-u Eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4-broadcast (aref src 0))
-	for i from begin below end by 8
+	for i of-type uint31 from begin below end by 8
 	do (multiple-value-bind (%eA0 %eA1)
-               (eval-A (make-f32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
+               (eval-A (make-s32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
                                    (+ i 4) (+ i 5) (+ i 6) (+ i 7))
-                       (f32.8-broadcast 0))
+                       (s32.8-broadcast 0))
              (let* ((%sum1  (f64.4/ %src0 %eA0))
 		    (%sum2  (f64.4/ %src0 %eA1))
 		    (%ti1   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
 		    (%ti2   (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7)))
 		    (%last1 %eA0)
 		    (%last2 %eA1))
-	       (loop for j from 1 below length
+	       (loop for j of-type uint31 from 1 below length
 		     do (let* ((%j     (make-f64.4 j j j j))
 			       (src-j  (aref src j))
 			       (%src-j (make-f64.4 src-j src-j src-j src-j))
@@ -62,15 +70,15 @@
                           (setf %last2 %idx2)
 			  (f64.4-incf %sum1 (f64.4/ %src-j %idx1))
 			  (f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-               (f64.4-store %sum1 dst i)
-               (f64.4-store %sum2 dst (+ i 4))))))
+               (setf (f64.4-aref dst i) %sum1)
+               (setf (f64.4-aref dst (+ i 4)) %sum2)))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4-broadcast (aref src 0))
-	for i from begin below end by 8
+	for i of-type uint31 from begin below end by 8
         do  (multiple-value-bind (%eAt0 %eAt1)
-                (eval-A (f32.8-broadcast 0)
-                        (make-f32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
+                (eval-A (s32.8-broadcast 0)
+                        (make-s32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
                                     (+ i 4) (+ i 5) (+ i 6) (+ i 7)))
               (let* ((%sum1  (f64.4/ %src0 %eAt0))
 		     (%sum2  (f64.4/ %src0 %eAt1))
@@ -78,7 +86,7 @@
 		     (%ti2   (make-f64.4 (+ i 5) (+ i 6) (+ i 7) (+ i 8)))
 		     (%last1 %eAt0)
 		     (%last2 %eAt1))
-	        (loop for j from 1 below length
+	        (loop for j of-type uint31 from 1 below length
                       do (let* ((%j     (make-f64.4 j j j j))
 			        (src-j  (aref src j))
 			        (%src-j (make-f64.4 src-j src-j src-j src-j))
@@ -88,8 +96,8 @@
                            (setf %last2 %idx2)
 			   (f64.4-incf %sum1 (f64.4/ %src-j %idx1))
 			   (f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-                (f64.4-store %sum1 dst i)
-                (f64.4-store %sum2 dst (+ i 4))))))
+                (setf (f64.4-aref dst i) %sum1)
+                (setf (f64.4-aref dst (+ i 4)) %sum2)))))
 
 (declaim (ftype (function () (integer 1 256)) GetThreadCount))
 #+sb-thread
@@ -97,7 +105,7 @@
   (progn (define-alien-routine sysconf long (name int))
          (sysconf 84)))
 
-(declaim (ftype (function (int31 int31 function) null) execute-parallel))
+(declaim (ftype (function (uint31 uint31 function) null) execute-parallel))
 #+sb-thread
 (defun execute-parallel (start end function)
   (declare (optimize (speed 0)))
@@ -115,7 +123,7 @@
 (defun execute-parallel (start end function)
   (funcall function start end))
 
-(declaim (ftype (function (d+array d+array d+array int31 int31 int31) null)
+(declaim (ftype (function (f64vec f64vec f64vec uint31 uint31 uint31) null)
                 EvalAtATimesU))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
@@ -124,29 +132,24 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-(declaim (ftype (function (int31) d+) spectralnorm))
+(declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array (+ n 7) :element-type 'double-float :initial-element 1.0d0))
-        (v (make-array (+ n 7) :element-type 'double-float))
-        (tmp (make-array (+ n 7) :element-type 'double-float)))
-    (declare (type d+array u v tmp))
+  (let ((u (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
+        (v (make-array (+ n 7) :element-type 'f64))
+        (tmp (make-array (+ n 7) :element-type 'f64)))
+    (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (let ((sumuv 0d0)
-          (sumvv 0d0))
-      (loop for i below n
-            for aref-v-i of-type d+ = (aref v i)
-            do (incf sumuv (the d+ (* (aref u i) aref-v-i)))
-               (incf sumvv (the d+ (* aref-v-i aref-v-i))))
-      (sqrt (the d+ (/ sumuv sumvv))))))
+    (sqrt (the f64 (/ (f64.4-vdot u v)
+                      (f64.4-vdot v v))))))
 
 
-(declaim (ftype (function (&optional int31) null) main))
+(declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional n-supplied)
   (let ((n (or n-supplied (parse-integer (or (second sb-ext::*posix-argv*)
                                              "5500")))))
-    (declare (type int31 n)) 
+    (declare (type uint31 n)) 
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))

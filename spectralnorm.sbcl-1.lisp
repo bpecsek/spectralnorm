@@ -22,7 +22,17 @@
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (ql:quickload :sb-simd :silent t)
-(use-package :sb-simd-avx)
+
+(defpackage #:spectralnorm1
+  (:use #:cl #:sb-simd-avx) 
+  (:nicknames #:sn1)
+  (:import-from #:cl-user #:define-alien-routine
+                          #:long
+                          #:int)
+  (:export #:main
+           #:spectralnorm))
+
+(in-package #:spectralnorm1)
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
@@ -69,7 +79,7 @@
 			(f64.2-incf %sum (f64.2/ %src-j %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
-(declaim (ftype (function () (integer 1 256)) Get-Thread-Count))
+(declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
 (defun get-thread-count ()
   (progn (define-alien-routine sysconf long (name int))
@@ -107,12 +117,12 @@
   (let ((u (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0))
         (v (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0))
         (tmp (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0)))
-    (declare (type d+array u v tmp))
+    (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (sqrt (the d+ (/ (f64.4-vdot u v)
-                     (f64.4-vdot v v))))))
+    (sqrt (the f64 (/ (f64.2-vdot u v)
+                      (f64.2-vdot v v))))))
 
 (declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional n-supplied)
