@@ -21,7 +21,7 @@
 ;;      * Improvement in type declarations
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
-(ql:quickload :sb-simd :silent t)
+(asdf:load-system :sb-simd)
 
 (defpackage #:spectralnorm2
   (:use #:cl #:sb-simd-avx) 
