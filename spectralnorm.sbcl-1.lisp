@@ -47,7 +47,7 @@
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null) eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-broadcast 0d0)
+        with %0.0  of-type f64.2 = (f64.2-zeros)
 	for i of-type uint31 from begin below end by 2
 	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) %0.0))
 		  (%sum  (f64.2/ %src0 %eAt))
@@ -64,7 +64,7 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-broadcast 0d0)
+        with %0.0  of-type f64.2 = (f64.2-zeros)
 	for i of-type uint31 from begin below end by 2
         do (let* ((%eA   (eval-A %0.0 (make-f64.2 (+ i 0) (+ i 1))))
                   (%sum  (f64.2/ %src0 %eA))
