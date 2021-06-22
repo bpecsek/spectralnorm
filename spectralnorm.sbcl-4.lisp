@@ -42,7 +42,8 @@
           (%i+j+1 (f64.4+ %i+1 ,%j)))
      (f64.4+ (f64.4* (f64.4* %i+j %i+j+1) (f64.4-broadcast 0.5d0)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null) Eval-A-times-u Eval-At-times-u))
+(declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null) Eval-A-times-u Eval-At-times-u)
+         (inline  Eval-A-times-u Eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4-broadcast (aref src 0))
         with %0.0  of-type f64.4 = (f64.4-zeros)
@@ -138,11 +139,9 @@
     (sqrt (the f64 (/ (f64.4-vdot u v)
                       (f64.4-vdot v v))))))
 
-
 (declaim (ftype (function (&optional uint31) null) main))
-(defun main (&optional n-supplied)
-  (let ((n (or n-supplied (parse-integer (or (second sb-ext::*posix-argv*)
-                                             "5500")))))
+(defun main (&optional (n-supplied 5500))
+  (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (declare (type uint31 n)) 
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))

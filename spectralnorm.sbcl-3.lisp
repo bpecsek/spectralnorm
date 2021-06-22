@@ -36,13 +36,11 @@
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
-(declaim (ftype (function (f64.2 f64.2) f64.2) eval-A)
-         (inline eval-A))
-(defun eval-A (%i %j)
-  (let* ((%i+1   (f64.2+ %i (f64.2-broadcast 1d0)))
-         (%i+j   (f64.2+ %i %j))
-         (%i+j+1 (f64.2+ %i+1 %j)))
-    (f64.2+ (f64.2* (f64.2* %i+j %i+j+1) (f64.2-broadcast 0.5d0)) %i+1)))
+(defmacro eval-A (%i %j)
+  `(let* ((%i+1   (f64.2+ ,%i (f64.2-broadcast 1d0)))
+          (%i+j   (f64.2+ ,%i ,%j))
+          (%i+j+1 (f64.2+ %i+1 ,%j)))
+     (f64.2+ (f64.2* (f64.2* %i+j %i+j+1) (f64.2-broadcast 0.5d0)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
                 eval-A-times-u eval-At-times-u)
