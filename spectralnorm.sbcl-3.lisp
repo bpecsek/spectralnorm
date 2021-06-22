@@ -47,7 +47,7 @@
          (inline eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-zeros)
+        with %0.0  of-type f64.2 = (f64.2-broadcast 0)
 	for i of-type uint31 from begin below end by 4
 	do (let* ((%eA0   (eval-A (make-f64.2 (+ i 0) (+ i 1)) %0.0))
 		  (%eA1   (eval-A (make-f64.2 (+ i 2) (+ i 3)) %0.0))
@@ -72,7 +72,7 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-zeros)
+        with %0.0  of-type f64.2 = (f64.2-broadcast 0)
 	for i of-type uint31 from begin below end by 4
         do (let* ((%eAt0  (eval-A %0.0 (make-f64.2 (+ i 0) (+ i 1))))
 		  (%eAt1  (eval-A %0.0 (make-f64.2 (+ i 2) (+ i 3))))
