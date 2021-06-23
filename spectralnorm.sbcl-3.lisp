@@ -37,17 +37,17 @@
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
 (defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f64.2+ ,%i (f64.2-broadcast 1d0)))
+  `(let* ((%i+1   (f64.2+ ,%i (f64.2 1)))
           (%i+j   (f64.2+ ,%i ,%j))
           (%i+j+1 (f64.2+ %i+1 ,%j)))
-     (f64.2+ (f64.2* (f64.2* %i+j %i+j+1) (f64.2-broadcast 0.5d0)) %i+1)))
+     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
                 eval-A-times-u eval-At-times-u)
          (inline eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-broadcast 0)
+  (loop with %src0 of-type f64.2 = (f64.2 (aref src 0))
+        with %0.0  of-type f64.2 = (f64.2 0)
 	for i of-type uint31 from begin below end by 4
 	do (let* ((%eA0   (eval-A (make-f64.2 (+ i 0) (+ i 1)) %0.0))
 		  (%eA1   (eval-A (make-f64.2 (+ i 2) (+ i 3)) %0.0))
@@ -58,9 +58,9 @@
 		  (%last0 %eA0)
 		  (%last1 %eA1))
 	     (loop for j of-type uint31 from 1 below length
-		   do (let* ((%j     (f64.2-broadcast j))
+		   do (let* ((%j     (f64.2 j))
 			     (src-j  (aref src j))
-			     (%src-j (f64.2-broadcast src-j))
+			     (%src-j (f64.2 src-j))
 			     (%idx0  (f64.2+ %last0 %ti0 %j))
 			     (%idx1  (f64.2+ %last1 %ti1 %j)))
 			(setf %last0 %idx0
@@ -71,8 +71,8 @@
                    (f64.2-aref dst (+ i 2)) %sum1))))
 
 (defun eval-At-times-u (src dst begin end length)
-  (loop with %src0 of-type f64.2 = (f64.2-broadcast (aref src 0))
-        with %0.0  of-type f64.2 = (f64.2-broadcast 0)
+  (loop with %src0 of-type f64.2 = (f64.2 (aref src 0))
+        with %0.0  of-type f64.2 = (f64.2 0)
 	for i of-type uint31 from begin below end by 4
         do (let* ((%eAt0  (eval-A %0.0 (make-f64.2 (+ i 0) (+ i 1))))
 		  (%eAt1  (eval-A %0.0 (make-f64.2 (+ i 2) (+ i 3))))
@@ -83,9 +83,9 @@
                   (%last0 %eAt0)
                   (%last1 %eAt1))
 	     (loop for j of-type uint31 from 1 below length
-                   do (let* ((%j     (f64.2-broadcast j))
+                   do (let* ((%j     (f64.2 j))
 			     (src-j  (aref src j))
-			     (%src-j (f64.2-broadcast src-j))
+			     (%src-j (f64.2 src-j))
 			     (%idx0  (f64.2+ %last0 %ti0 %j))
 			     (%idx1  (f64.2+ %last1 %ti1 %j)))
 			(setf %last0 %idx0
