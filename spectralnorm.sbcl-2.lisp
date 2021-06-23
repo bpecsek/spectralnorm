@@ -45,35 +45,29 @@
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i of-type uint31 from begin below end by 4
-	do (let* ((%eAt  (eval-A (make-f64.4 (+ i 0) (+ i 1)
-                                             (+ i 2) (+ i 3)) (f64.4 0)))
+  (loop for i from begin below end by 4
+	do (let* ((%eAt  (eval-A (make-f64.4 i (1+ i) (+ i 2) (+ i 3))
+                                 (f64.4 0)))
 		  (%sum  (f64.4/ (f64.4 (aref src 0)) %eAt))
-		  (%ti   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
+		  (%ti   (make-f64.4 i (1+ i) (+ i 2) (+ i 3)))
 		  (%last %eAt))
-	     (loop for j of-type uint31 from 1 below length
-		   do (let* ((%j     (f64.4 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.4 src-j))
-			     (%idx   (f64.4+ %last %ti %j)))
+	     (loop for j from 1 below length
+		   do (let ((%idx   (f64.4+ %last %ti (f64.4 j))))
 			(setf %last %idx)
-			(f64.4-incf %sum (f64.4/ %src-j %idx))))
+			(f64.4-incf %sum (f64.4/ (f64.4 (aref src j)) %idx))))
 	     (setf (f64.4-aref dst i) %sum))))
 
-(defun eval-At-times-u (src dst begin end length)
-  (loop for i of-type uint31 from begin below end by 4
-        do (let* ((%eA   (eval-A (f64.4 0) (make-f64.4 (+ i 0) (+ i 1)
-                                                        (+ i 2) (+ i 3))))
+(defun eval-at-times-u (src dst begin end length)
+  (loop for i from begin below end by 4
+        do (let* ((%eA   (eval-A (f64.4 0)
+                                 (make-f64.4 i (1+ i) (+ i 2) (+ i 3))))
 		  (%sum  (f64.4/ (f64.4 (aref src 0)) %eA))
-		  (%ti   (make-f64.4 (+ i 1) (+ i 2) (+ i 3) (+ i 4)))
+		  (%ti   (make-f64.4 (1+ i) (+ i 2) (+ i 3) (+ i 4)))
 		  (%last %eA))
-	     (loop for j of-type uint31 from 1 below length
-                   do (let* ((%j     (f64.4 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.4 src-j))
-			     (%idx   (f64.4+ %last %ti %j)))
+	     (loop for j from 1 below length
+                   do (let ((%idx   (f64.4+ %last %ti (f64.4 j))))
 			(setf %last %idx)
-			(f64.4-incf %sum (f64.4/ %src-j %idx))))
+			(f64.4-incf %sum (f64.4/ (f64.4 (aref src j)) %idx))))
 	     (setf (f64.4-aref dst i) %sum))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
@@ -111,20 +105,18 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array (+ n 3) :element-type 'f64 :initial-element 1.0d0))
-        (v (make-array (+ n 3) :element-type 'f64))
+  (let ((u   (make-array (+ n 3) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (+ n 3) :element-type 'f64))
         (tmp (make-array (+ n 3) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (sqrt (the f64 (/ (f64.4-vdot u v)
-                      (f64.4-vdot v v))))))
+    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
 
 (declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
-    (declare (type uint31 n)) 
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))

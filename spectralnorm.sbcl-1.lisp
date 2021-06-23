@@ -51,12 +51,9 @@
 		  (%ti   (make-f64.2 (+ i 0) (+ i 1)))
 		  (%last %eAt))
 	     (loop for j of-type uint31 from 1 below length
-		   do (let* ((%j     (f64.2 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.2 src-j))
-			     (%idx   (f64.2+ %last %ti %j)))
+		   do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
-			(f64.2-incf %sum (f64.2/ %src-j %idx))))
+			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
@@ -66,15 +63,11 @@
                   (%ti   (make-f64.2 (+ i 1) (+ i 2)))
                   (%last %eA))
 	     (loop for j of-type uint31 from 1 below length
-                   do (let* ((%j     (f64.2 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.2 src-j))
-			     (%idx   (f64.2+ %last %ti %j)))
+                   do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
-			(f64.2-incf %sum (f64.2/ %src-j %idx))))
+			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
-(declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
 (defun get-thread-count ()
   (progn (define-alien-routine sysconf long (name int))
@@ -109,20 +102,18 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0))
-        (v (make-array (+ n 1) :element-type 'f64))
+  (let ((u   (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (+ n 1) :element-type 'f64))
         (tmp (make-array (+ n 1) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (sqrt (the f64 (/ (f64.2-vdot u v)
-                      (f64.2-vdot v v))))))
+    (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
 
-(declaim (ftype (function (&optional uint31) null) main))
+;(declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
-    (declare (type uint31 n)) 
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))
     (format t "~11,9F~%" (spectralnorm N))))

@@ -57,8 +57,7 @@
 		  (%last2 %eAt1))
 	     (loop for j of-type uint31 from 1 below length
 		   do (let* ((%j     (f64.4 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.4 src-j))
+			     (%src-j (f64.4 (aref src j)))
 			     (%idx1  (f64.4+ %last1 %ti1 %j))
 			     (%idx2  (f64.4+ %last2 %ti2 %j)))
 			(setf %last1 %idx1)
@@ -81,8 +80,7 @@
 		  (%last2 %eA1))
 	     (loop for j of-type uint31 from 1 below length
                    do (let* ((%j     (f64.4 j))
-			     (src-j  (aref src j))
-			     (%src-j (f64.4 src-j))
+			     (%src-j (f64.4 (aref src j)))
 			     (%idx1  (f64.4+ %last1 %ti1 %j))
 			     (%idx2  (f64.4+ %last2 %ti2 %j)))
 			(setf %last1 %idx1)
