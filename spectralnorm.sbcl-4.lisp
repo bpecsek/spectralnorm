@@ -125,8 +125,8 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array   (+ n 7) :element-type 'f64 :initial-element 1.0d0))
-        (v (make-array   (+ n 7) :element-type 'f64))
+  (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (+ n 7) :element-type 'f64))
         (tmp (make-array (+ n 7) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do

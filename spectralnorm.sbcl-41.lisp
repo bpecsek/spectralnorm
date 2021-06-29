@@ -133,15 +133,14 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
-        (v (make-array (+ n 7) :element-type 'f64))
+  (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (+ n 7) :element-type 'f64))
         (tmp (make-array (+ n 7) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (sqrt (the f64 (/ (f64.4-vdot u v)
-                      (f64.4-vdot v v))))))
+    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
 
 
 (declaim (ftype (function (&optional uint31) null) main))
