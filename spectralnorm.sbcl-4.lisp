@@ -60,12 +60,12 @@
 			     (%src-j (f64.4 (aref src j)))
 			     (%idx1  (f64.4+ %last1 %ti1 %j))
 			     (%idx2  (f64.4+ %last2 %ti2 %j)))
-			(setf %last1 %idx1)
-                        (setf %last2 %idx2)
+			(setf %last1 %idx1
+                              %last2 %idx2)
 			(f64.4-incf %sum1 (f64.4/ %src-j %idx1))
 			(f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-	     (setf (f64.4-aref dst i) %sum1)
-	     (setf (f64.4-aref dst (+ i 4)) %sum2))))
+	     (setf (f64.4-aref dst i) %sum1
+                   (f64.4-aref dst (+ i 4)) %sum2))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
@@ -83,12 +83,12 @@
 			     (%src-j (f64.4 (aref src j)))
 			     (%idx1  (f64.4+ %last1 %ti1 %j))
 			     (%idx2  (f64.4+ %last2 %ti2 %j)))
-			(setf %last1 %idx1)
-                        (setf %last2 %idx2)
+			(setf %last1 %idx1
+                              %last2 %idx2)
 			(f64.4-incf %sum1 (f64.4/ %src-j %idx1))
 			(f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-	     (setf (f64.4-aref dst i) %sum1)
-	     (setf (f64.4-aref dst (+ i 4)) %sum2))))
+	     (setf (f64.4-aref dst i) %sum1
+                   (f64.4-aref dst (+ i 4)) %sum2))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
@@ -125,15 +125,14 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
-        (v (make-array (+ n 7) :element-type 'f64))
+  (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (+ n 7) :element-type 'f64))
         (tmp (make-array (+ n 7) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (sqrt (the f64 (/ (f64.4-vdot u v)
-                      (f64.4-vdot v v))))))
+    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
 
 (declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
