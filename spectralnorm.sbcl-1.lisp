@@ -43,7 +43,8 @@
      (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
-                eval-A-times-u eval-At-times-u))
+                eval-A-times-u eval-At-times-u)
+         (inline eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 2
 	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0)))
@@ -102,9 +103,9 @@
 
 (declaim (ftype (function (uint31) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u   (make-array (+ n 1) :element-type 'f64 :initial-element 1.0d0))
-        (v   (make-array (+ n 1) :element-type 'f64))
-        (tmp (make-array (+ n 1) :element-type 'f64)))
+  (let ((u   (make-array (1+ n) :element-type 'f64 :initial-element 1.0d0))
+        (v   (make-array (1+ n) :element-type 'f64))
+        (tmp (make-array (1+ n) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
