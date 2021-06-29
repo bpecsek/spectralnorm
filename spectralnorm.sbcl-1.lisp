@@ -118,4 +118,3 @@
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))
     (format t "~11,9F~%" (spectralnorm N))))
-
