@@ -1,3 +1,25 @@
+;;    The Computer Language Benchmarks Game
+;;    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
+;;
+;;    Adapted from the C (gcc) code by Sebastien Loisel
+;;
+;;    Contributed by Christopher Neufeld
+;;    Modified by Juho Snellman 2005-10-26
+;;      * Use SIMPLE-ARRAY instead of ARRAY in declarations
+;;      * Use TRUNCATE instead of / for fixnum division
+;;      * Rearrange EVAL-A to make it more readable and a bit faster
+;;    Modified by Andy Hefner 2008-09-18
+;;      * Eliminate array consing
+;;      * Clean up type declarations in eval-A
+;;      * Distribute work across multiple cores on SBCL
+;;    Modified by Witali Kusnezow 2008-12-02
+;;      * use right shift instead of truncate for division in eval-A
+;;      * redefine eval-A as a macro
+;;    Modified by Bela Pecsek/Tomas Wain
+;;      * Substantial speedup compared to sbcl-9 of Shubhamkar Ayare
+;;      * Using AVX calculation in two lanes
+;;      * Improvement in type declarations
+(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (ql:quickload :sb-simd :silent t)
 
@@ -19,8 +41,7 @@
   `(let* ((%i+1   (avx2:s32.8+ ,%i (s32.8 1)))
           (%i+j   (avx2:s32.8+ ,%i ,%j))
           (%i+j+1 (avx2:s32.8+ %i+1 ,%j))
-          (evala  (avx2:s32.8+ (avx2:s32.8-shiftr (avx2:s32.8-mullo %i+j %i+j+1)
-                                                  1) %i+1)))
+          (evala  (avx2:s32.8+ (avx2:s32.8-shiftr (avx2:s32.8-mullo %i+j %i+j+1) 1) %i+1)))
      (values (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 0))
              (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 1)))))
 
@@ -28,7 +49,7 @@
                 Eval-A-times-u Eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
-        with %0 of-type    s32.8 = (s32.8 0)
+        with %0 of-type s32.8    = (s32.8 0)
 	for i of-type uint31 from begin below end by 8
 	do (multiple-value-bind (%eA0 %eA1)
                (eval-A (make-s32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
@@ -54,7 +75,7 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
-        with %0 of-type    s32.8 = (s32.8 0)
+        with %0 of-type s32.8    = (s32.8 0)
 	for i of-type uint31 from begin below end by 8
         do  (multiple-value-bind (%eAt0 %eAt1)
                 (eval-A %0 (make-s32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
@@ -77,7 +98,7 @@
                 (setf (f64.4-aref dst i) %sum1)
                 (setf (f64.4-aref dst (+ i 4)) %sum2)))))
 
-(declaim (ftype (function () (integer 1 256)) get-thread-count))
+(declaim (ftype (function () (integer 1 256)) GetThreadCount))
 #+sb-thread
 (defun get-thread-num ()
   (progn (define-alien-routine sysconf long (name int))
@@ -125,7 +146,7 @@
 (declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
-    (declare (type uint31 n)) 
+    (declare (type uint31 n))
     (if (< n 8)
         (error "The supplied value of 'n' bust be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))
