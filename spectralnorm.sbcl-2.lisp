@@ -28,8 +28,7 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:export #:main
-           #:spectralnorm))
+  (:export #:main))
 
 (in-package #:spectralnorm2)
 
@@ -45,8 +44,7 @@
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 4
-	do (let* ((%eAt  (eval-A (make-f64.4 i (1+ i) (+ i 2) (+ i 3))
-                                 (f64.4 0)))
+	do (let* ((%eAt  (eval-A (make-f64.4 i (1+ i) (+ i 2) (+ i 3)) (f64.4 0)))
 		  (%sum  (f64.4/ (f64.4 (aref src 0)) %eAt))
 		  (%ti   (make-f64.4 i (1+ i) (+ i 2) (+ i 3)))
 		  (%last %eAt))
@@ -58,8 +56,7 @@
 
 (defun eval-at-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 4
-        do (let* ((%eA   (eval-A (f64.4 0)
-                                 (make-f64.4 i (1+ i) (+ i 2) (+ i 3))))
+        do (let* ((%eA   (eval-A (f64.4 0) (make-f64.4 i (1+ i) (+ i 2) (+ i 3))))
 		  (%sum  (f64.4/ (f64.4 (aref src 0)) %eA))
 		  (%ti   (make-f64.4 (1+ i) (+ i 2) (+ i 3) (+ i 4)))
 		  (%last %eA))

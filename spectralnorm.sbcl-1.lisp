@@ -29,24 +29,23 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:export #:main
-           #:spectralnorm))
+  (:export #:main))
 
 (in-package #:spectralnorm1)
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
 (defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f64.2+ ,%i (f64.2 1d0)))
+  `(let* ((%i+1   (f64.2+ ,%i (f64.2 1)))
           (%i+j   (f64.2+ ,%i ,%j))
           (%i+j+1 (f64.2+ %i+1 ,%j)))
-     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5d0)) %i+1)))
+     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 2
-	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0d0)))
+	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0)))
 		  (%sum  (f64.2/ (f64.2 (aref src 0)) %eAt))
 		  (%ti   (make-f64.2 (+ i 0) (+ i 1)))
 		  (%last %eAt))
@@ -58,7 +57,7 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 2
-        do (let* ((%eA   (eval-A (f64.2 0d0) (make-f64.2 (+ i 0) (+ i 1))))
+        do (let* ((%eA   (eval-A (f64.2 0) (make-f64.2 (+ i 0) (+ i 1))))
                   (%sum  (f64.2/ (f64.2 (aref src 0)) %eA))
                   (%ti   (make-f64.2 (+ i 1) (+ i 2)))
                   (%last %eA))

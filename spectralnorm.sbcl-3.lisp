@@ -29,8 +29,7 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:export #:main
-           #:spectralnorm))
+  (:export #:main))
 
 (in-package #:spectralnorm3)
 
