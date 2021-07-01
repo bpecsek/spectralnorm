@@ -17,22 +17,23 @@
 ;;      * redefine eval-A as a macro
 ;;    Modified by Bela Pecsek/Tomas Wain
 ;;      * Substantial speedup compared to sbcl-9 of Shubhamkar Ayare
-;;      * Using SSE calculations
+;;      * Using AVX calculation in two lanes
 ;;      * Improvement in type declarations
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
-(asdf:load-system :sb-simd)
+(ql:quickload :sb-simd :silent t)
 
-(defpackage #:spectralnorm1
+(defpackage #:spectralnorm41
   (:use #:cl #:sb-simd-avx) 
-  (:nicknames #:sn1)
+  (:nicknames #:sn41)
+  (:local-nicknames (#:avx2 #:sb-simd-avx2))
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
   (:export #:main
            #:spectralnorm))
 
-(in-package #:spectralnorm1)
+(in-package #:spectralnorm41)
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
@@ -69,8 +70,9 @@
 			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
+(declaim (ftype (function () (integer 1 256)) GetThreadCount))
 #+sb-thread
-(defun get-thread-count ()
+(defun get-thread-num ()
   (progn (define-alien-routine sysconf long (name int))
          (sysconf 84)))
 
@@ -78,7 +80,7 @@
 #+sb-thread
 (defun execute-parallel (start end function)
   (declare (optimize (speed 0)))
-  (let* ((n    (truncate (- end start) (get-thread-count)))
+  (let* ((n    (truncate (- end start) (get-thread-num)))
          (step (- n (mod n 2))))
     (loop for i from start below end by step
           collecting (let ((start i)
@@ -92,7 +94,7 @@
 (defun execute-parallel (start end function)
   (funcall function start end))
 
-(declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
+(declaim (ftype (function (f64vec f64vec f64vec uint31 uint31 uint31) null)
                 EvalAtATimesU))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
@@ -108,13 +110,14 @@
         (tmp (make-array (1+ n) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
-      (eval-AtA-times-u u v tmp 0 n n)
-      (eval-AtA-times-u v u tmp 0 n n))
-    (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
+      (eval-AtA-times-u u v tmp 0 N N)
+      (eval-AtA-times-u v u tmp 0 N N))
+    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
 
-;(declaim (ftype (function (&optional uint31) null) main))
+(declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
+    (declare (type uint31 n))
     (if (< n 8)
-        (error "The supplied value of 'n' bust be at least 8"))
-    (format t "~11,9F~%" (spectralnorm N))))
+        (error "The supplied value of 'n' bust be at least 8"))))
+    (format t "~11,9F~%" (spectralnorm n))
