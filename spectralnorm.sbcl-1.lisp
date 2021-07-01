@@ -21,19 +21,18 @@
 ;;      * Improvement in type declarations
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
-(ql:quickload :sb-simd :silent t)
+(asdf:load-system :sb-simd)
 
-(defpackage #:spectralnorm41
+(defpackage #:spectralnorm1
   (:use #:cl #:sb-simd-avx) 
-  (:nicknames #:sn41)
-  (:local-nicknames (#:avx2 #:sb-simd-avx2))
+  (:nicknames #:sn1)
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
   (:export #:main
            #:spectralnorm))
 
-(in-package #:spectralnorm41)
+(in-package #:spectralnorm1)
 
 (deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
 
@@ -41,11 +40,10 @@
   `(let* ((%i+1   (f64.2+ ,%i (f64.2 1d0)))
           (%i+j   (f64.2+ ,%i ,%j))
           (%i+j+1 (f64.2+ %i+1 ,%j)))
-     (f64.2+ (f64.2/ %i+j %i+j+1 (f64.2 2d0)) %i+1)))
+     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5d0)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
-                eval-A-times-u eval-At-times-u)
-         (inline eval-A-times-u eval-At-times-u))
+                eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type uint31 from begin below end by 2
 	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0d0)))
@@ -117,7 +115,6 @@
 (declaim (ftype (function (&optional uint31) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
-    (declare (type uint31 n))
     (if (< n 8)
-        (error "The supplied value of 'n' bust be at least 8"))))
-    (format t "~11,9F~%" (spectralnorm n))
+        (error "The supplied value of 'n' bust be at least 8"))
+    (format t "~11,9F~%" (spectralnorm n))))
