@@ -33,35 +33,33 @@
 
 (in-package #:spectralnorm1)
 
-(deftype uint31 (&optional (bits 31)) `(unsigned-byte ,bits))
-
 (defmacro eval-A (%i %j)
   `(let* ((%i+1   (f64.2+ ,%i (f64.2 1)))
           (%i+j   (f64.2+ ,%i ,%j))
           (%i+j+1 (f64.2+ %i+1 ,%j)))
      (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec uint31 uint31 uint31) null)
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i of-type uint31 from begin below end by 2
+  (loop for i of-type u32 from begin below end by 2
 	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0)))
 		  (%sum  (f64.2/ (f64.2 (aref src 0)) %eAt))
 		  (%ti   (make-f64.2 (+ i 0) (+ i 1)))
 		  (%last %eAt))
-	     (loop for j of-type uint31 from 1 below length
+	     (loop for j of-type u32 from 1 below length
 		   do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
-  (loop for i of-type uint31 from begin below end by 2
+  (loop for i of-type u32 from begin below end by 2
         do (let* ((%eA   (eval-A (f64.2 0) (make-f64.2 (+ i 0) (+ i 1))))
                   (%sum  (f64.2/ (f64.2 (aref src 0)) %eA))
                   (%ti   (make-f64.2 (+ i 1) (+ i 2)))
                   (%last %eA))
-	     (loop for j of-type uint31 from 1 below length
+	     (loop for j of-type u32 from 1 below length
                    do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
@@ -73,7 +71,7 @@
   (progn (define-alien-routine sysconf long (name int))
          (sysconf 84)))
 
-(declaim (ftype (function (uint31 uint31 function) null) execute-parallel))
+(declaim (ftype (function (u32 u32 function) null) execute-parallel))
 #+sb-thread
 (defun execute-parallel (start end function)
   (declare (optimize (speed 0)))
@@ -91,7 +89,7 @@
 (defun execute-parallel (start end function)
   (funcall function start end))
 
-(declaim (ftype (function (f64vec f64vec f64vec uint31 uint31 uint31) null)
+(declaim (ftype (function (f64vec f64vec f64vec u32 u32 u32) null)
                 EvalAtATimesU))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
@@ -100,7 +98,7 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-(declaim (ftype (function (uint31) f64) spectralnorm))
+(declaim (ftype (function (u32) f64) spectralnorm))
 (defun spectralnorm (n)
   (let ((u   (make-array (1+ n) :element-type 'f64 :initial-element 1.0d0))
         (v   (make-array (1+ n) :element-type 'f64))
@@ -111,7 +109,7 @@
       (eval-AtA-times-u v u tmp 0 N N))
     (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
 
-(declaim (ftype (function (&optional uint31) null) main))
+(declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (if (< n 8)
