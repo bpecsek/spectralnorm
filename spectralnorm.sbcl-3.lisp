@@ -33,11 +33,11 @@
 
 (in-package #:spectralnorm3)
 
-(defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f64.2+ ,%i (f64.2 1)))
-          (%i+j   (f64.2+ ,%i ,%j))
-          (%i+j+1 (f64.2+ %i+1 ,%j)))
-     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
+(sb-simd:define-inline eval-A (%i %j)
+  (let* ((%i+1   (f64.2+ %i (f64.2 1)))
+         (%i+j   (f64.2+ %i %j))
+         (%i+j+1 (f64.2+ %i+1 %j)))
+    (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))

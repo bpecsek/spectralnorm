@@ -35,13 +35,13 @@
 
 (in-package #:spectralnorm41)
 
-(defmacro eval-A (%i %j)
-  `(let* ((%i+1   (avx2:s32.8+ ,%i (s32.8 1)))
-          (%i+j   (avx2:s32.8+ ,%i ,%j))
-          (%i+j+1 (avx2:s32.8+ %i+1 ,%j))
-          (evala  (avx2:s32.8+ (avx2:s32.8-shiftr (avx2:s32.8-mullo %i+j %i+j+1) 1) %i+1)))
-     (values (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 0))
-             (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 1)))))
+(sb-simd:define-inline eval-A (%i %j)
+  (let* ((%i+1   (avx2:s32.8+ %i (s32.8 1)))
+         (%i+j   (avx2:s32.8+ %i %j))
+         (%i+j+1 (avx2:s32.8+ %i+1 %j))
+         (evala  (avx2:s32.8+ (avx2:s32.8-shiftr (avx2:s32.8-mullo %i+j %i+j+1) 1) %i+1)))
+    (values (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 0))
+            (f64.4-from-s32.4 (avx2:s32.8-extract128 evala 1)))))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 Eval-A-times-u Eval-At-times-u))
