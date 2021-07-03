@@ -33,7 +33,9 @@
 
 (in-package #:spectralnorm1)
 
-(sb-simd:define-inline eval-A (%i %j)
+(declaim (ftype (function (f64.2 f64.2) f64.2) eval-A)
+         (inline eval-A))
+(defun eval-A (%i %j)
   (let* ((%i+1   (f64.2+ %i (f64.2 1)))
          (%i+j   (f64.2+ %i %j))
          (%i+j+1 (f64.2+ %i+1 %j)))
