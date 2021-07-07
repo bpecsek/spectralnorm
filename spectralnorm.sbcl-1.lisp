@@ -41,27 +41,27 @@
          (%i+j+1 (f64.2+ %i+1 %j)))
     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
-                eval-A-times-u eval-At-times-u))
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 2
+  (loop for i from begin below end by 2
 	do (let* ((%eAt  (eval-A (make-f64.2 (+ i 0) (+ i 1)) (f64.2 0)))
 		  (%sum  (f64.2/ (f64.2 (aref src 0)) %eAt))
 		  (%ti   (make-f64.2 (+ i 0) (+ i 1)))
 		  (%last %eAt))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
 		   do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-At-times-u))
 (defun eval-At-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 2
+  (loop for i from begin below end by 2
         do (let* ((%eA   (eval-A (f64.2 0) (make-f64.2 (+ i 0) (+ i 1))))
                   (%sum  (f64.2/ (f64.2 (aref src 0)) %eA))
                   (%ti   (make-f64.2 (+ i 1) (+ i 2)))
                   (%last %eA))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
                    do (let* ((%idx (f64.2+ %last %ti (f64.2 j))))
 			(setf %last %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 (aref src j)) %idx))))
@@ -115,5 +115,5 @@
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (if (< n 8)
-        (error "The supplied value of 'n' bust be at least 8"))
+        (error "The supplied value of 'n' must be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))

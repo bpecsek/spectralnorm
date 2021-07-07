@@ -32,16 +32,14 @@
 
 (in-package #:spectralnorm2)
 
-(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A)
-         (inline eval-A))
-(defun eval-A (%i %j)
+(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
+(define-inline eval-A (%i %j)
   (let* ((%i+1   (f64.4+ %i (f64.4 1)))
          (%i+j   (f64.4+ %i %j))
          (%i+j+1 (f64.4+ %i+1 %j)))
     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
-                eval-A-times-u eval-At-times-u))
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
 	do (let* ((%eAt  (eval-A (make-f64.4 i (1+ i) (+ i 2) (+ i 3)) (f64.4 0)))
@@ -54,6 +52,7 @@
 			(f64.4-incf %sum (f64.4/ (f64.4 (aref src j)) %idx))))
 	     (setf (f64.4-aref dst i) %sum))))
 
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-At-times-u))
 (defun eval-at-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         do (let* ((%eA   (eval-A (f64.4 0) (make-f64.4 i (1+ i) (+ i 2) (+ i 3))))
@@ -114,5 +113,5 @@
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (if (< n 8)
-        (error "The supplied value of 'n' bust be at least 8"))
+        (error "The supplied value of 'n' must be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))
