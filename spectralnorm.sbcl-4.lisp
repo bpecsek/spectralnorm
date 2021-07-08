@@ -33,9 +33,8 @@
 
 (in-package #:spectralnorm4)
 
-(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A)
-         (inline eval-A))
-(defun eval-A (%i %j)
+(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
+(define-inline eval-A (%i %j)
   (let* ((%i+1   (f64.4+ %i (f64.4 1)))
          (%i+j   (f64.4+ %i %j))
          (%i+j+1 (f64.4+ %i+1 %j)))
