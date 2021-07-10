@@ -113,7 +113,7 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
+    (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))

@@ -25,7 +25,7 @@
 (asdf:load-system :sb-simd)
 
 (defpackage #:spectralnorm2
-  (:use #:cl :sb-simd-avx) 
+  (:use #:cl :sb-simd-avx2) 
   (:nicknames #:sn2)
   (:import-from #:cl-user #:define-alien-routine
                           #:long
@@ -36,18 +36,18 @@
 
 (declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
 (define-inline eval-A (%i %j)
-  (let* ((%i+1   (f64.4+ %i (f64.4 1d0)))
+  (let* ((%i+1   (f64.4+ %i (f64.4 1)))
          (%i+j   (f64.4+ %i %j))
          (%i+j+1 (f64.4+ %i+1 %j)))
-    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5d0)) %i+1)))
+    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i+    of-type f64.4 = (make-f64.4 0d0 1d0 2d0 3d0)
+        with %i+    of-type f64.4 = (make-f64.4 0 1 2 3)
         do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
-                  (%eA  (eval-A %ti (f64.4 0d0)))
+                  (%eA  (eval-A %ti (f64.4 0)))
 		  (%sum (f64.4/ %src-0 %eA)))
 	     (loop for j from 1 below length
                    for src-j of-type f64 = (aref src j)
@@ -60,11 +60,11 @@
 (defun eval-At-times-u (src dst begin end length)
   (loop for i from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i++   of-type f64.4 = (make-f64.4 1d0 2d0 3d0 4d0)
+        with %i++   of-type f64.4 = (make-f64.4 1 2 3 4)
         do (let* ((%ti  (f64.4+ (f64.4 i) %i++))
-                  (%eAt (eval-A (f64.4 0d0) (f64.4- %ti (f64.4 1))))
+                  (%eAt (eval-A (f64.4 0) (f64.4- %ti (f64.4 1))))
 		  (%sum (f64.4/ %src-0 %eAt)))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
                    for src-j of-type f64 = (aref src j)
                    do (let ((%idx (f64.4+ %eAt %ti (f64.4 j))))
 			(setf %eAt %idx)
