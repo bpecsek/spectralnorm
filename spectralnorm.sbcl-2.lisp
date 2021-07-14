@@ -82,7 +82,7 @@
   (declare (optimize (speed 0)))
   (let* ((n    (truncate (- end start) (get-thread-count)))
          (step (- n (mod n 2))))
-    (loop for i from start below end by step
+    (loop for i of-type u32 from start below end by step
           collecting (let ((start i)
                            (end (min end (+ i step))))
                        (sb-thread:make-thread
@@ -117,6 +117,5 @@
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
-    (if (< n 8)
-        (error "The supplied value of 'n' must be at least 8"))
+    (if (< n 8) (error "The supplied value of 'n' must be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))
