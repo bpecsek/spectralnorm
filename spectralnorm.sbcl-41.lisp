@@ -46,7 +46,8 @@
     (values (f64.4-from-f32.4 (f32.8-extract128 evala 0))
             (f64.4-from-f32.4 (f32.8-extract128 evala 1)))))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
+                eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
 	for i of-type u32 from begin below end by 8
@@ -68,7 +69,6 @@
                (setf (f64.4-aref dst (+ i 0)) %sum0
                      (f64.4-aref dst (+ i 4)) %sum1)))))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-At-times-u))
 (defun eval-At-times-u (src dst begin end length)
   (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
 	for i of-type u32 from begin below end by 8
