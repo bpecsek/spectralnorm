@@ -43,14 +43,13 @@
          (%i+j+1 (f64.2+ %i+1 %j)))
     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5d0)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
+                eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i from begin below end by 4
 	with %src-0 of-type f64.2 = (f64.2 (aref src 0))
-        with %i+    of-type f64.2 = (make-f64.2 0d0 1d0)
-        with %i++   of-type f64.2 = (make-f64.2 2d0 3d0)
-	do (let* ((%ti0   (f64.2+ (f64.2 i) %i+))
-		  (%ti1   (f64.2+ (f64.2 i) %i++))
+	do (let* ((%ti0   (f64.2+ (f64.2 i) (make-f64.2 0d0 1d0)))
+		  (%ti1   (f64.2+ (f64.2 i) (make-f64.2 2d0 3d0)))
 		  (%eA0   (eval-A %ti0 (f64.2 0)))
 		  (%eA1   (eval-A %ti1 (f64.2 0)))
 		  (%sum0  (f64.2/ %src-0 %eA0))
@@ -67,14 +66,11 @@
 	     (setf (f64.2-aref dst (+ i 0)) %sum0
                    (f64.2-aref dst (+ i 2)) %sum1))))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-At-times-u))
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         with %src-0 of-type f64.2 = (f64.2 (aref src 0))
-        with %i+    of-type f64.2 = (make-f64.2 1d0 2d0)
-        with %i++   of-type f64.2 = (make-f64.2 3d0 4d0)
-	do (let* ((%ti0   (f64.2+ (f64.2 i) %i+))
-                  (%ti1   (f64.2+ (f64.2 i) %i++))
+	do (let* ((%ti0   (f64.2+ (f64.2 i) (make-f64.2 1d0 2d0)))
+                  (%ti1   (f64.2+ (f64.2 i) (make-f64.2 3d0 4d0)))
                   (%eAt0  (eval-A (f64.2 0) (f64.2- %ti0 (f64.2 1))))
 		  (%eAt1  (eval-A (f64.2 0) (f64.2- %ti1 (f64.2 1))))
                   (%sum0  (f64.2/ %src-0 %eAt0))
