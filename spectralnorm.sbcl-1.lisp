@@ -20,6 +20,8 @@
 ;;      * Improvement in type declarations
 ;;      * Changed code to be compatible with sb-simd
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
+;;        in the hot loops
+
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
@@ -36,10 +38,10 @@
 
 (declaim (ftype (function (f64.2 f64.2) f64.2) eval-A))
 (define-inline eval-A (%i %j)
-  (let* ((%i+1   (f64.2+ %i (f64.2 1)))
+  (let* ((%i+1   (f64.2+ %i (f64.2 1d0)))
          (%i+j   (f64.2+ %i %j))
          (%i+j+1 (f64.2+ %i+1 %j)))
-    (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
+    (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5d0)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
 (defun eval-A-times-u (src dst begin end length)
@@ -62,7 +64,7 @@
         with %src-0 of-type f64.2 = (f64.2 (aref src 0))
         with %i++   of-type f64.2 = (make-f64.2 1d0 2d0)
         do (let* ((%ti  (f64.2+ (f64.2 i) %i++))
-                  (%eAt (eval-A (f64.2 0d0) (f64.2- %ti (f64.2 1))))
+                  (%eAt (eval-A (f64.2 0d0) (f64.2- %ti)))
                   (%sum (f64.2/ %src-0 %eAt)))
 	     (loop for j from 1 below length
                    for src-j of-type f64 = (aref src j)
@@ -96,7 +98,7 @@
   (funcall function start end))
 
 (declaim (ftype (function (f64vec f64vec f64vec u32 u32 u32) null)
-                EvalAtATimesU))
+                eval-AtA-times-u))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
 	(execute-parallel start end (lambda (start end)

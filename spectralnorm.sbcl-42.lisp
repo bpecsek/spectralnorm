@@ -19,6 +19,10 @@
 ;;      * Substantial speedup compared to sbcl-9 of Shubhamkar Ayare
 ;;      * Using AVX calculation in two lanes
 ;;      * Improvement in type declarations
+;;      * Changed code to be compatible with sb-simd
+;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
+;;        in the hot loops
+
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
 (asdf:load-system :sb-simd :silent t)
@@ -45,53 +49,49 @@
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null) Eval-A-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
-	for i of-type u32 from begin below end by 8
+  (loop for i of-type u32 from begin below end by 8
+        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
 	do (multiple-value-bind (%eA0 %eA1)
-               (eval-A (make-f32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
-                                   (+ i 4) (+ i 5) (+ i 6) (+ i 7)) (f32.8 0))
-             (let* ((%sum1  (f64.4/ %src0 %eA0))
-		    (%sum2  (f64.4/ %src0 %eA1))
-		    (%ti1   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
-		    (%ti2   (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7)))
-		    (%last1 %eA0)
-		    (%last2 %eA1))
+               (eval-A (f32.8+ (f32.8 i) (make-f32.8 0 1 2 3 4 5 6 7))
+                       (f32.8 0))
+             (let* ((%sum0  (f64.4/ %src-0 %eA0))
+		    (%sum1  (f64.4/ %src-0 %eA1))
+		    (%ti0   (make-f64.4 (+ i 0) (+ i 1) (+ i 2) (+ i 3)))
+		    (%ti1   (make-f64.4 (+ i 4) (+ i 5) (+ i 6) (+ i 7))))
 	       (loop for j of-type u32 from 1 below length
-		     do (let* ((%j     (f64.4 j))
-			       (%src-j (f64.4 (aref src j)))
-			       (%idx1  (f64.4+ %last1 %ti1 %j))
-			       (%idx2  (f64.4+ %last2 %ti2 %j)))
-			  (setf %last1 %idx1
-                                %last2 %idx2)
-			  (f64.4-incf %sum1 (f64.4/ %src-j %idx1))
-			  (f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-               (setf (f64.4-aref dst i) %sum1
-                     (f64.4-aref dst (+ i 4)) %sum2)))))
+		     for src-j of-type f64 = (aref src j)
+                     do (let* ((%j     (f64.4 j))
+			       (%idx0  (f64.4+ %eA0 %ti0 %j))
+			       (%idx1  (f64.4+ %eA1 %ti1 %j)))
+			  (setf %eA0 %idx0
+                                %eA1 %idx1)
+			  (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
+			  (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
+               (setf (f64.4-aref dst i) %sum0
+                     (f64.4-aref dst (+ i 4)) %sum1)))))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null) Eval-At-times-u))
 (defun eval-At-times-u (src dst begin end length)
-  (loop with %src0 of-type f64.4 = (f64.4 (aref src 0))
-	for i of-type u32 from begin below end by 8
-        do  (multiple-value-bind (%eAt0 %eAt1)
-                (eval-A (f32.8 0) (make-f32.8 (+ i 0) (+ i 1) (+ i 2) (+ i 3)
-                                              (+ i 4) (+ i 5) (+ i 6) (+ i 7)))
-              (let* ((%sum1  (f64.4/ %src0 %eAt0))
-		     (%sum2  (f64.4/ %src0 %eAt1))
-		     (%ti1   (make-f64.4 (+ i 1) (+ i 2) (+ i 3) (+ i 4)))
-		     (%ti2   (make-f64.4 (+ i 5) (+ i 6) (+ i 7) (+ i 8)))
-		     (%last1 %eAt0)
-		     (%last2 %eAt1))
+  (loop for i of-type u32 from begin below end by 8
+        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
+	do  (multiple-value-bind (%eAt0 %eAt1)
+                (eval-A (f32.8 0) (f32.8+ (f32.8 i) (make-f32.8 0 1 2 3 4 5 6 7)))
+              (let* ((%sum0  (f64.4/ %src-0 %eAt0))
+		     (%sum1  (f64.4/ %src-0 %eAt1))
+		     (%ti0   (make-f64.4 (+ i 1) (+ i 2) (+ i 3) (+ i 4)))
+		     (%ti1   (make-f64.4 (+ i 5) (+ i 6) (+ i 7) (+ i 8))))
 	        (loop for j of-type u32 from 1 below length
+                      for src-j of-type f64 = (aref src j)
                       do (let* ((%j     (f64.4 j))
-			        (%src-j (f64.4 (aref src j)))
-			        (%idx1  (f64.4+ %last1 %ti1 %j))
-			        (%idx2  (f64.4+ %last2 %ti2 %j)))
-			   (setf %last1 %idx1
-                                 %last2 %idx2)
-			   (f64.4-incf %sum1 (f64.4/ %src-j %idx1))
-			   (f64.4-incf %sum2 (f64.4/ %src-j %idx2))))
-                (setf (f64.4-aref dst i) %sum1
-                      (f64.4-aref dst (+ i 4)) %sum2)))))
+			        (%idx0  (f64.4+ %eAt0 %ti0 %j))
+			        (%idx1  (f64.4+ %eAt1 %ti1 %j)))
+			   (setf %eAt0 %idx0
+                                 %eAt1 %idx1)
+			   (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
+			   (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
+                (setf (f64.4-aref dst i) %sum0
+                      (f64.4-aref dst (+ i 4)) %sum1)))))
+
 
 (declaim (ftype (function () (integer 1 256)) GetThreadCount))
 #+sb-thread
@@ -118,7 +118,7 @@
   (funcall function start end))
 
 (declaim (ftype (function (f64vec f64vec f64vec u32 u32 u32) null)
-                EvalAtATimesU))
+                eval-AtA-times-u))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
 	(execute-parallel start end (lambda (start end)

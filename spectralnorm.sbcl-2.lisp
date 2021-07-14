@@ -20,12 +20,14 @@
 ;;      * Improvement in type declarations
 ;;      * Changed code to be compatible with sb-simd
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+;;        in the hot loopsű
+
+(declaim (optimize speed (safety 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
 
 (defpackage #:spectralnorm2
-  (:use #:cl :sb-simd-avx2) 
+  (:use #:cl :sb-simd-avx) 
   (:nicknames #:sn2)
   (:import-from #:cl-user #:define-alien-routine
                           #:long
@@ -41,30 +43,28 @@
          (%i+j+1 (f64.4+ %i+1 %j)))
     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-A-times-u))
+(declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
+                eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i from begin below end by 4
-        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i+    of-type f64.4 = (make-f64.4 0 1 2 3)
-        do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
+  (loop for i of-type u32 from begin below end by 4
+        with src-0 of-type f64 = (aref src 0)
+        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
                   (%eA  (eval-A %ti (f64.4 0)))
-		  (%sum (f64.4/ %src-0 %eA)))
-	     (loop for j from 1 below length
+		  (%sum (f64.4/ (f64.4 src-0) %eA)))
+	     (loop for j of-type u32 from 1 below length
                    for src-j of-type f64 = (aref src j)
 		   do (let ((%idx (f64.4+ %eA %ti (f64.4 j))))
 			(setf %eA %idx)
 			(f64.4-incf %sum (f64.4/ (f64.4 src-j) %idx))))
 	     (setf (f64.4-aref dst i) %sum))))
 
-(declaim (ftype (function (f64vec f64vec u32 u32 u32) null) eval-At-times-u))
 (defun eval-At-times-u (src dst begin end length)
-  (loop for i from begin below end by 4
-        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i++   of-type f64.4 = (make-f64.4 1 2 3 4)
-        do (let* ((%ti  (f64.4+ (f64.4 i) %i++))
-                  (%eAt (eval-A (f64.4 0) (f64.4- %ti (f64.4 1))))
-		  (%sum (f64.4/ %src-0 %eAt)))
-	     (loop for j from 1 below length
+  (loop for i of-type u32 from begin below end by 4
+        with src-0 of-type f64 = (aref src 0)
+        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
+                  (%eAt (eval-A (f64.4 0) (f64.4- %ti)))
+		  (%sum (f64.4/ (f64.4 src-0) %eAt)))
+	     (loop for j of-type u32 from 1 below length
                    for src-j of-type f64 = (aref src j)
                    do (let ((%idx (f64.4+ %eAt %ti (f64.4 j))))
 			(setf %eAt %idx)
@@ -96,13 +96,13 @@
   (funcall function start end))
 
 (declaim (ftype (function (f64vec f64vec f64vec u32 u32 u32) null)
-                EvalAtATimesU))
+                eval-AtA-times-u))
 (defun eval-AtA-times-u (src dst tmp start end N)
       (progn
 	(execute-parallel start end (lambda (start end)
-				      (eval-A-times-u src tmp start end N)))
+				      (eval-A-times-u src tmp start end n)))
 	(execute-parallel start end (lambda (start end)
-				      (eval-At-times-u tmp dst start end N)))))
+				      (eval-At-times-u tmp dst start end n)))))
 
 (declaim (ftype (function (u32) f64) spectralnorm))
 (defun spectralnorm (n)
