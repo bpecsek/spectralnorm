@@ -20,7 +20,7 @@
 ;;      * Improvement in type declarations
 ;;      * Changed code to be compatible with sb-simd
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
-;;        in the hot loopsű
+;;        in the hot loops
 (declaim (optimize speed (safety 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
@@ -38,9 +38,9 @@
 (declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
 (define-inline eval-A (%i %j)
   (let* ((%i+1   (f64.4+ %i (f64.4 1)))
-         (%i+j   (f64.4+ %i %j))
-         (%i+j+1 (f64.4+ %i+1 %j)))
-    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
+          (%i+j   (f64.4+ %i %j))
+          (%i+j+1 (f64.4+ %i+1 %j)))
+     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
