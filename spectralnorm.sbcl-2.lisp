@@ -38,18 +38,18 @@
 (declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
 (define-inline eval-A (%i %j)
   (let* ((%i+1   (f64.4+ %i (f64.4 1)))
-          (%i+j   (f64.4+ %i %j))
-          (%i+j+1 (f64.4+ %i+1 %j)))
-     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
+         (%i+j   (f64.4+ %i %j))
+         (%i+j+1 (f64.4+ %i+1 %j)))
+    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
-        with src-0 of-type f64 = (aref src 0)
+        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
         do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
                   (%eA  (eval-A %ti (f64.4 0)))
-		  (%sum (f64.4/ (f64.4 src-0) %eA)))
+		  (%sum (f64.4/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
                    for src-j of-type f64 = (aref src j)
 		   do (let ((%idx (f64.4+ %eA %ti (f64.4 j))))
@@ -59,10 +59,10 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
-        with src-0 of-type f64 = (aref src 0)
+        with %src-0 of-type f64.4 = (f64.4 (aref src 0))
         do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
                   (%eAt (eval-A (f64.4 0) (f64.4- %ti)))
-		  (%sum (f64.4/ (f64.4 src-0) %eAt)))
+		  (%sum (f64.4/ %src-0 %eAt)))
 	     (loop for j of-type u32 from 1 below length
                    for src-j of-type f64 = (aref src j)
                    do (let ((%idx (f64.4+ %eAt %ti (f64.4 j))))
@@ -105,7 +105,7 @@
 
 (declaim (ftype (function (u32) f64) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u   (make-array (+ n 3) :element-type 'f64 :initial-element 1.0d0))
+  (let ((u   (make-array (+ n 3) :element-type 'f64 :initial-element 1d0))
         (v   (make-array (+ n 3) :element-type 'f64))
         (tmp (make-array (+ n 3) :element-type 'f64)))
     (declare (type f64vec u v tmp))
