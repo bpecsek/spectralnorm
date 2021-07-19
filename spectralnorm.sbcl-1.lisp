@@ -35,20 +35,19 @@
 
 (in-package #:spectralnorm1)
 
-(declaim (ftype (function (f64.2 f64.2) f64.2) eval-A))
-(define-inline eval-A (%i %j)
-  (let* ((%i+1   (f64.2+ %i (f64.2 1d0)))
-         (%i+j   (f64.2+ %i %j))
-         (%i+j+1 (f64.2+ %i+1 %j)))
-    (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5d0)) %i+1)))
+(defmacro eval-A (%i %j)
+  `(let* ((%i+1   (f64.2+ ,%i (f64.2 1)))
+          (%i+j   (f64.2+ ,%i ,%j))
+          (%i+j+1 (f64.2+ %i+1 ,%j)))
+     (f64.2+ (f64.2* %i+j %i+j+1 (f64.2 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 2
 	with %src-0 of-type f64.2 = (f64.2 (aref src 0))
-        do (let* ((%ti  (f64.2+ (f64.2 i) (make-f64.2 0d0 1d0)))
-                  (%eA  (eval-A %ti (f64.2 0d0)))
+        do (let* ((%ti  (f64.2+ (f64.2 i) (make-f64.2 0 1)))
+                  (%eA  (eval-A %ti (f64.2 0)))
 		  (%sum (f64.2/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
                    for %src-j of-type f64 = (aref src j)
@@ -60,8 +59,8 @@
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 2
         with %src-0 of-type f64.2 = (f64.2 (aref src 0))
-        do (let* ((%ti  (f64.2+ (f64.2 i) (make-f64.2 1d0 2d0)))
-                  (%eAt (eval-A (f64.2 0d0) (f64.2- %ti)))
+        do (let* ((%ti  (f64.2+ (f64.2 i) (make-f64.2 1 2)))
+                  (%eAt (eval-A (f64.2 0) (f64.2- %ti)))
                   (%sum (f64.2/ %src-0 %eAt)))
 	     (loop for j of-type u32 from 1 below length
                    for src-j of-type f64 = (aref src j)

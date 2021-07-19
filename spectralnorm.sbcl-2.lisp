@@ -22,6 +22,7 @@
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
 ;;        in the hot loops
 (declaim (optimize speed (safety 0) (debug 0)))
+(setq sb-ext::*block-compile-default* t)
 
 (asdf:load-system :sb-simd)
 
@@ -31,23 +32,24 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
+  (:import-from #:sb-simd-avx #:f64.4-store)
   (:export #:main))
 
 (in-package #:spectralnorm2)
 
-(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
-(define-inline eval-A (%i %j)
-  (let* ((%i+1   (f64.4+ %i (f64.4 1)))
-         (%i+j   (f64.4+ %i %j))
-         (%i+j+1 (f64.4+ %i+1 %j)))
-    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
+(defmacro eval-A (%i %j)
+  `(let* ((%i+1   (f64.4+ ,%i (f64.4 1)))
+          (%i+j   (f64.4+ ,%i ,%j))
+          (%i+j+1 (f64.4+ %i+1 ,%j)))
+     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
+        with %i+ of-type f64.4 = (make-f64.4 0 1 2 3)
+        do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
                   (%eA  (eval-A %ti (f64.4 0)))
 		  (%sum (f64.4/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
@@ -55,12 +57,13 @@
 		   do (let ((%idx (f64.4+ %eA %ti (f64.4 j))))
 			(setf %eA %idx)
 			(f64.4-incf %sum (f64.4/ (f64.4 src-j) %idx))))
-	     (setf (f64.4-aref dst i) %sum))))
+	     (f64.4-store %sum dst i))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
+        with %i+ of-type f64.4 = (make-f64.4 1 2 3 4)
+        do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
                   (%eAt (eval-A (f64.4 0) (f64.4- %ti)))
 		  (%sum (f64.4/ %src-0 %eAt)))
 	     (loop for j of-type u32 from 1 below length
@@ -68,9 +71,9 @@
                    do (let ((%idx (f64.4+ %eAt %ti (f64.4 j))))
 			(setf %eAt %idx)
 			(f64.4-incf %sum (f64.4/ (f64.4 src-j) %idx))))
-	     (setf (f64.4-aref dst i) %sum))))
+	     (f64.4-store %sum dst i))))
 
-(declaim (ftype (function () (integer 1 256)) get-thread-count))
+(declaim (ftype (function () (u8)) get-thread-count))
 #+sb-thread
 (defun get-thread-count ()
   (progn (define-alien-routine sysconf long (name int))
