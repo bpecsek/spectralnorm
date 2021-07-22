@@ -93,7 +93,7 @@
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
-(defun get-thread-num ()
+(defun get-thread-count ()
   (progn (define-alien-routine sysconf long (name int))
          (sysconf 84)))
 
@@ -101,7 +101,7 @@
 #+sb-thread
 (defun execute-parallel (start end function)
   (declare (optimize (speed 0)))
-  (let* ((n    (truncate (- end start) (get-thread-num)))
+  (let* ((n    (truncate (- end start) (get-thread-count)))
          (step (- n (mod n 2))))
     (loop for i from start below end by step
           collecting (let ((start i)
