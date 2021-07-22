@@ -69,7 +69,7 @@
 			(f64.2-incf %sum (f64.2/ (f64.2 src-j) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
-(declaim (ftype (function () (integer 1 256)) GetThreadCount))
+(declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
 (defun get-thread-num ()
   (progn (define-alien-routine sysconf long (name int))
