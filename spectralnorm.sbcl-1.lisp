@@ -31,6 +31,7 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
+  (:import-from #:sb-simd-avx #:f64.2-store)
   (:export #:main))
 
 (in-package #:spectralnorm1)
@@ -54,7 +55,7 @@
 		   do (let* ((%idx (f64.2+ %eA %ti (f64.2 j))))
 			(setf %eA %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 src-j) %idx))))
-	     (setf (f64.2-aref dst i) %sum))))
+	     (f64.2-store %sum dst i))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 2
@@ -67,7 +68,7 @@
                    do (let* ((%idx (f64.2+ %eAt %ti (f64.2 j))))
 			(setf %eAt %idx)
 			(f64.2-incf %sum (f64.2/ (f64.2 src-j) %idx))))
-	     (setf (f64.2-aref dst i) %sum))))
+	     (f64.2-store %sum dst i))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread

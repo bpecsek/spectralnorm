@@ -32,6 +32,7 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
+  (:import-from #:sb-simd-avx #:f64.4-store)
   (:export #:main
            #:spectralnorm))
 
@@ -66,8 +67,8 @@
                                 %eA1 %idx1)
 			  (f64.4-incf %sum0 (f64.4/ %src-j %idx0))
 			  (f64.4-incf %sum1 (f64.4/ %src-j %idx1))))
-               (setf (f64.4-aref dst (+ i 0)) %sum0
-                     (f64.4-aref dst (+ i 4)) %sum1)))))
+               (f64.4-store %sum0 dst i)
+               (f64.4-store %sum1 dst (+ i 4))))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 8
@@ -88,8 +89,8 @@
                                  %eAt1 %idx1)
 			   (f64.4-incf %sum0 (f64.4/ %src-j %idx0))
 			   (f64.4-incf %sum1 (f64.4/ %src-j %idx1))))
-                (setf (f64.4-aref dst (+ i 0)) %sum0
-                      (f64.4-aref dst (+ i 4)) %sum1)))))
+                (f64.4-store %sum0 dst i)
+                (f64.4-store %sum1 dst (+ i 4))))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
