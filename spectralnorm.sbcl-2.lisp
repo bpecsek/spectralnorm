@@ -47,8 +47,7 @@
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i+ of-type f64.4 = (make-f64.4 0 1 2 3)
-        do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
+        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
                   (%eA  (eval-A %ti (f64.4 0)))
 		  (%sum (f64.4/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
@@ -61,8 +60,7 @@
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
         with %src-0 of-type f64.4 = (f64.4 (aref src 0))
-        with %i+ of-type f64.4 = (make-f64.4 1 2 3 4)
-        do (let* ((%ti  (f64.4+ (f64.4 i) %i+))
+        do (let* ((%ti  (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
                   (%eAt (eval-A (f64.4 0) (f64.4- %ti)))
 		  (%sum (f64.4/ %src-0 %eAt)))
 	     (loop for j of-type u32 from 1 below length
