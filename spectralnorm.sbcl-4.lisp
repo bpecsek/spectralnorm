@@ -91,7 +91,7 @@
                 (setf (f64.4-aref dst (+ i 0)) %sum0
                       (f64.4-aref dst (+ i 4)) %sum1)))))
 
-(declaim (ftype (function () (integer 1 256)) GetThreadCount))
+(declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
 (defun get-thread-num ()
   (progn (define-alien-routine sysconf long (name int))
@@ -124,7 +124,7 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-(declaim (ftype (function (u32) f64) spectralnorm))
+(declaim (ftype (function (u32) null) spectralnorm))
 (defun spectralnorm (n)
   (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
         (v   (make-array (+ n 7) :element-type 'f64))
@@ -133,7 +133,7 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v)))))
+    (format t "~11,9F~%" (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v))))))
 
 
 (declaim (ftype (function (&optional u32) null) main))
@@ -141,5 +141,5 @@
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (declare (type u32 n))
     (if (< n 8)
-        (error "The supplied value of 'n' bust be at least 8"))
-    (format t "~11,9F~%" (spectralnorm n))))
+        (error "The supplied value of 'n' bust be at least 8")
+        (spectralnorm n))))

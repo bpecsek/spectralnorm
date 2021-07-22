@@ -118,7 +118,7 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-(declaim (ftype (function (u32) f64) spectralnorm))
+(declaim (ftype (function (u32) null) spectralnorm))
 (defun spectralnorm (n)
   (let ((u   (make-array (+ n 3) :element-type 'f64 :initial-element 1.0d0))
         (v   (make-array (+ n 3) :element-type 'f64))
@@ -127,11 +127,12 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
+    (format t "~11,9F~%" (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v))))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (declare (type u32 n)) 
-    (if (< n 8) (error "The supplied value of 'n' must be at least 8")
-        (format t "~11,9F~%" (spectralnorm N)))))
+    (if (< n 8)
+        (error "The supplied value of 'n' must be at least 8")
+        (spectralnorm N))))
