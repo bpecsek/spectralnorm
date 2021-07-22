@@ -46,13 +46,6 @@ void EvalPart(double *__restrict__ src, double *__restrict__ dst,
 
         _mm_storeu_pd(dst + i + 0, sum);
     }
-    for(; i < end; i++) {
-        double sum = 0;
-        for (int j = 0; j < length; j++)
-            sum += src[j] / double(Index<modei>(i, j));
-        dst[i] = sum;
-    }
-
 }
 
 void EvalATimesU(double *src, double *dst, int begin, int end, int N) {
@@ -85,8 +78,8 @@ int GetThreadCount() {
 }
 
 double spectral_game(int N) {
-    __attribute__((aligned(16))) double u[N];
-    __attribute__((aligned(16))) double v[N], tmp[N];
+    __attribute__((aligned(16))) double u[N+1];
+    __attribute__((aligned(16))) double v[N+1], tmp[N+1];
 
     double vBv = 0.0;
     double vv = 0.0;

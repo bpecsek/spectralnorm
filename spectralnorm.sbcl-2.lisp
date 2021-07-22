@@ -22,7 +22,6 @@
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
 ;;        in the hot loops
 (declaim (optimize speed (safety 0) (debug 0)))
-(setq sb-ext::*block-compile-default* t)
 
 (asdf:load-system :sb-simd)
 

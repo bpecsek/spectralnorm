@@ -50,10 +50,10 @@
                   (%eA  (eval-A %ti (f64.2 0)))
 		  (%sum (f64.2/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
-                   for %src-j of-type f64 = (aref src j)
+                   for src-j of-type f64 = (aref src j)
 		   do (let* ((%idx (f64.2+ %eA %ti (f64.2 j))))
 			(setf %eA %idx)
-			(f64.2-incf %sum (f64.2/ (f64.2 %src-j) %idx))))
+			(f64.2-incf %sum (f64.2/ (f64.2 src-j) %idx))))
 	     (setf (f64.2-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
@@ -119,3 +119,6 @@
     (if (< n 8)
         (error "The supplied value of 'n' must be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))
+
+(defun make-exe ()
+  (sb-ext:save-lisp-and-die "spectralnorm.sbcl-1.sbcl_run" :toplevel #'sn1:main :executable t))
