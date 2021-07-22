@@ -49,13 +49,13 @@
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 8
-        with %src0 of-type f64.4 = (f64.4 (aref src 0))
+        with src-0 of-type f64 = (aref src 0)
         do (multiple-value-bind (%eA0 %eA1)
                (eval-A (f32.8+ (f32.8 i) (make-f32.8 0 1 2 3 4 5 6 7)) (f32.8 0))
              (let* ((%ti0   (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
 	            (%ti1   (f64.4+ (f64.4 i) (make-f64.4 4 5 6 7)))
-                    (%sum0  (f64.4/ %src0 %eA0))
-		    (%sum1  (f64.4/ %src0 %eA1)))
+                    (%sum0  (f64.4/ (f64.4 src-0) %eA0))
+		    (%sum1  (f64.4/ (f64.4 src-0) %eA1)))
 	       (loop for j of-type u32 from 1 below length
                      for src-j of-type f64 = (aref src j)
 		     do (let* ((%j     (f64.4 j))
@@ -71,13 +71,13 @@
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 8
-        with %src0 of-type f64.4 = (f64.4 (aref src 0))
+        with src-0 of-type f64 = (aref src 0)
 	do  (multiple-value-bind (%eAt0 %eAt1)
                 (eval-A (f32.8 0) (f32.8+ (f32.8 i) (make-f32.8 0 1 2 3 4 5 6 7)))
               (let* ((%ti0   (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
 		     (%ti1   (f64.4+ (f64.4 i) (make-f64.4 5 6 7 8)))
-                     (%sum0  (f64.4/ %src0 %eAt0))
-		     (%sum1  (f64.4/ %src0 %eAt1)))
+                     (%sum0  (f64.4/ (f64.4 src-0) %eAt0))
+		     (%sum1  (f64.4/ (f64.4 src-0) %eAt1)))
 	        (loop for j of-type u32 from 1 below length
                       for src-j of-type f64 = (aref src j)
 		      do (let* ((%j     (f64.4 j))
