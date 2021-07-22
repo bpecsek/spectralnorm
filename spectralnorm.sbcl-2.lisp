@@ -21,7 +21,7 @@
 ;;      * Changed code to be compatible with sb-simd
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
 ;;        in the hot loops
-(declaim (optimize speed (safety 0) (debug 0)))
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
 
