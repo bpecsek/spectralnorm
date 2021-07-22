@@ -119,6 +119,3 @@
     (if (< n 8)
         (error "The supplied value of 'n' must be at least 8"))
     (format t "~11,9F~%" (spectralnorm n))))
-
-(defun make-exe ()
-  (sb-ext:save-lisp-and-die "spectralnorm.sbcl-1.sbcl_run" :toplevel #'sn1:main :executable t))
