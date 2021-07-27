@@ -23,7 +23,7 @@
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
 ;;        in the hot loops
 
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0) (compilation-speed 0)))
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
 
@@ -33,7 +33,6 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:import-from #:sb-simd-avx #:f64.4-store)
   (:export #:main
            #:spectralnorm))
 
@@ -54,10 +53,10 @@
         with src-0 of-type f64 = (aref src 0)
         do (multiple-value-bind (%eA0 %eA1)
                (eval-A (f32.8+ (f32.8 i) (make-f32.8 0 1 2 3 4 5 6 7)) (f32.8 0))
-             (let* ((%ti0   (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
-	            (%ti1   (f64.4+ (f64.4 i) (make-f64.4 4 5 6 7)))
-                    (%sum0  (f64.4/ (f64.4 src-0) %eA0))
-		    (%sum1  (f64.4/ (f64.4 src-0) %eA1)))
+             (let* ((%ti0  (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
+	            (%ti1  (f64.4+ (f64.4 i) (make-f64.4 4 5 6 7)))
+                    (%sum0 (f64.4/ (f64.4 src-0) %eA0))
+		    (%sum1 (f64.4/ (f64.4 src-0) %eA1)))
 	       (loop for j of-type u32 from 1 below length
                      for src-j of-type f64 = (aref src j)
 		     do (let* ((src-j  (aref src j))
@@ -68,8 +67,8 @@
                                 %eA1 %idx1)
 			  (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
 			  (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
-               (f64.4-store %sum0 dst i)
-               (f64.4-store %sum1 dst (+ i 4))))))
+               (setf (f64.4-aref dst i) %sum0)
+               (setf (f64.4-aref dst (+ i 4)) %sum1)))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 8
@@ -90,8 +89,8 @@
                                  %eAt1 %idx1)
 			   (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
 			   (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
-                (f64.4-store %sum0 dst i)
-                (f64.4-store %sum1 dst (+ i 4))))))
+                (setf (f64.4-aref dst i) %sum0)
+                (setf (f64.4-aref dst (+ i 4)) %sum1)))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread

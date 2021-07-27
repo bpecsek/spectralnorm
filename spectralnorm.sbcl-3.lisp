@@ -21,7 +21,7 @@
 ;;      * Changed code to be compatible with sb-simd
 ;;      * Eliminated mixing VEX and non-VEX instructions as far as possible
 ;;        in the hot loops
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (asdf:load-system :sb-simd)
 
@@ -31,7 +31,6 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:import-from #:sb-simd-avx #:f64.2-store)
   (:export #:main))
 
 (in-package #:spectralnorm3)
@@ -63,8 +62,8 @@
                               %eA1 %idx1)
 			(f64.2-incf %sum0 (f64.2/ (f64.2 src-j) %idx0))
 			(f64.2-incf %sum1 (f64.2/ (f64.2 src-j) %idx1))))
-             (f64.2-store %sum0 dst i)
-             (f64.2-store %sum1 dst (+ i 2)))))
+             (setf (f64.2-aref dst i) %sum0)
+             (setf (f64.2-aref dst (+ i 2)) %sum1))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
@@ -84,8 +83,8 @@
                               %eAt1 %idx1)
 			(f64.2-incf %sum0 (f64.2/ (f64.2 src-j) %idx0))
 			(f64.2-incf %sum1 (f64.2/ (f64.2 src-j) %idx1))))
-	     (f64.2-store %sum0 dst i)
-             (f64.2-store %sum1 dst (+ i 2)))))
+	     (setf (f64.2-aref dst i) %sum0)
+             (setf (f64.2-aref dst (+ i 2)) %sum1))))
 
 (declaim (ftype (function () (integer 1 256)) get-thread-count))
 #+sb-thread
