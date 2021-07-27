@@ -1,3 +1,4 @@
+
 ;;    The Computer Language Benchmarks Game
 ;;    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
 ;;
@@ -59,14 +60,14 @@
 		    (%sum1  (f64.4/ (f64.4 src-0) %eA1)))
 	       (loop for j of-type u32 from 1 below length
                      for src-j of-type f64 = (aref src j)
-		     do (let* ((%j     (f64.4 j))
-                               (%src-j (f64.4 src-j))
+		     do (let* ((src-j  (aref src j))
+                               (%j     (f64.4 j))
 			       (%idx0  (f64.4+ %eA0 %ti0 %j))
 			       (%idx1  (f64.4+ %eA1 %ti1 %j)))
 			  (setf %eA0 %idx0
                                 %eA1 %idx1)
-			  (f64.4-incf %sum0 (f64.4/ %src-j %idx0))
-			  (f64.4-incf %sum1 (f64.4/ %src-j %idx1))))
+			  (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
+			  (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
                (f64.4-store %sum0 dst i)
                (f64.4-store %sum1 dst (+ i 4))))))
 
@@ -81,14 +82,14 @@
 		     (%sum1  (f64.4/ (f64.4 src-0) %eAt1)))
 	        (loop for j of-type u32 from 1 below length
                       for src-j of-type f64 = (aref src j)
-		      do (let* ((%j     (f64.4 j))
-                                (%src-j (f64.4 src-j))
+		      do (let* ((src-j  (aref src j))
+                                (%j     (f64.4 j))
                                 (%idx0  (f64.4+ %eAt0 %ti0 %j))
 			        (%idx1  (f64.4+ %eAt1 %ti1 %j)))
 			   (setf %eAt0 %idx0
                                  %eAt1 %idx1)
-			   (f64.4-incf %sum0 (f64.4/ %src-j %idx0))
-			   (f64.4-incf %sum1 (f64.4/ %src-j %idx1))))
+			   (f64.4-incf %sum0 (f64.4/ (f64.4 src-j) %idx0))
+			   (f64.4-incf %sum1 (f64.4/ (f64.4 src-j) %idx1))))
                 (f64.4-store %sum0 dst i)
                 (f64.4-store %sum1 dst (+ i 4))))))
 
@@ -127,14 +128,20 @@
 
 (declaim (ftype (function (u32) null) spectralnorm))
 (defun spectralnorm (n)
-  (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1.0d0))
+  (let ((u   (make-array (+ n 7) :element-type 'f64 :initial-element 1d0))
         (v   (make-array (+ n 7) :element-type 'f64))
         (tmp (make-array (+ n 7) :element-type 'f64)))
     (declare (type f64vec u v tmp))
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (format t "~11,9F~%" (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v))))))
+    (let ((sumvb 0d0)
+          (sumvv 0d0))
+      (loop for i below n
+            for aref-v-i of-type f64 = (aref v i)
+            do (incf sumvb (the f64 (* (aref u i) aref-v-i)))
+               (incf sumvv (the f64 (* aref-v-i aref-v-i))))
+      (format t "~11,9F~%" (sqrt (the f64 (/ sumvb sumvv)))))))
 
 
 (declaim (ftype (function (&optional u32) null) main))

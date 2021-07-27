@@ -31,16 +31,16 @@
   (:import-from #:cl-user #:define-alien-routine
                           #:long
                           #:int)
-  (:import-from #:sb-simd-avx #:f64.4-store)
   (:export #:main))
 
 (in-package #:spectralnorm2)
 
-(defmacro eval-A (%i %j)
-  `(let* ((%i+1   (f64.4+ ,%i (f64.4 1)))
-          (%i+j   (f64.4+ ,%i ,%j))
-          (%i+j+1 (f64.4+ %i+1 ,%j)))
-     (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
+(declaim (ftype (function (f64.4 f64.4) f64.4) eval-A))
+(define-inline eval-A (%i %j)
+  (let* ((%i+1   (f64.4+ %i (f64.4 1)))
+         (%i+j   (f64.4+ %i %j))
+         (%i+j+1 (f64.4+ %i+1 %j)))
+    (f64.4+ (f64.4* %i+j %i+j+1 (f64.4 0.5)) %i+1)))
 
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
@@ -51,11 +51,11 @@
                   (%eA  (eval-A %ti (f64.4 0)))
 		  (%sum (f64.4/ %src-0 %eA)))
 	     (loop for j of-type u32 from 1 below length
-                   for src-j of-type f64 = (aref src j)
-		   do (let ((%idx (f64.4+ %eA %ti (f64.4 j))))
+		   do (let ((src-j (aref src j))
+                            (%idx (f64.4+ %eA %ti (f64.4 j))))
 			(setf %eA %idx)
 			(f64.4-incf %sum (f64.4/ (f64.4 src-j) %idx))))
-	     (f64.4-store %sum dst i))))
+	     (setf (f64.4-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
   (loop for i of-type u32 from begin below end by 4
@@ -64,11 +64,11 @@
                   (%eAt (eval-A (f64.4 0) (f64.4- %ti)))
 		  (%sum (f64.4/ %src-0 %eAt)))
 	     (loop for j of-type u32 from 1 below length
-                   for src-j of-type f64 = (aref src j)
-                   do (let ((%idx (f64.4+ %eAt %ti (f64.4 j))))
+                   do (let ((src-j (aref src j))
+                            (%idx (f64.4+ %eAt %ti (f64.4 j))))
 			(setf %eAt %idx)
 			(f64.4-incf %sum (f64.4/ (f64.4 src-j) %idx))))
-	     (f64.4-store %sum dst i))))
+	     (setf (f64.4-aref dst i) %sum))))
 
 (declaim (ftype (function () (u8)) get-thread-count))
 #+sb-thread
@@ -96,7 +96,7 @@
 
 (declaim (ftype (function (f64vec f64vec f64vec u32 u32 u32) null)
                 eval-AtA-times-u))
-(defun eval-AtA-times-u (src dst tmp start end N)
+(defun eval-AtA-times-u (src dst tmp start end n)
       (progn
 	(execute-parallel start end (lambda (start end)
 				      (eval-A-times-u src tmp start end n)))
@@ -112,7 +112,13 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (format t "~11,9F~%" (sqrt (/ (f64.4-vdot u v) (f64.4-vdot v v))))))
+    (let ((sumvb 0d0)
+          (sumvv 0d0))
+      (loop for i below n
+            for aref-v-i of-type f64 = (aref v i)
+            do (incf sumvb (the f64 (* (aref u i) aref-v-i)))
+               (incf sumvv (the f64 (* aref-v-i aref-v-i))))
+      (format t "~11,9F~%" (sqrt (the f64 (/ sumvb sumvv)))))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
