@@ -31,7 +31,6 @@ static inline __m128d EvalA(__m128d i, __m128d j) {
 
 void EvalATimesU(double *__restrict__ src, double *__restrict__ dst,
                  int begin, int end, int length) {
-
     for(int i = begin; i < end; i += 2) {
       __m128d src0 = _mm_set1_pd(src[0]);
       __m128d ti   = _mm_set1_pd(i) + _mm_setr_pd(0.0, 1.0);
@@ -49,7 +48,6 @@ void EvalATimesU(double *__restrict__ src, double *__restrict__ dst,
 
 void EvalAtTimesU(double *__restrict__ src, double *__restrict__ dst,
                   int begin, int end, int length) {
-    
     for(int i = begin; i < end; i += 2) {
       __m128d src0 = _mm_set1_pd(src[0]);
       __m128d ti   = _mm_set1_pd(i) + _mm_setr_pd(1.0, 2.0);    
