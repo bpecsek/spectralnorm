@@ -140,6 +140,6 @@
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (declare (type u32 n)) 
-    (if (< n 8)
-        (error "The supplied value of 'n' must be at least 8")
+    (if (< n 16)
+        (error "The supplied value of 'n' must be at least 16")
         (spectralnorm N))))
