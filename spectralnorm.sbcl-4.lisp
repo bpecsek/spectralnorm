@@ -1,4 +1,3 @@
-
 ;;    The Computer Language Benchmarks Game
 ;;    https://salsa.debian.org/benchmarksgame-team/benchmarksgame/
 ;;
@@ -58,7 +57,6 @@
                     (%sum0 (f64.4/ (f64.4 src-0) %eA0))
 		    (%sum1 (f64.4/ (f64.4 src-0) %eA1)))
 	       (loop for j of-type u32 from 1 below length
-                     for src-j of-type f64 = (aref src j)
 		     do (let* ((src-j  (aref src j))
                                (%j     (f64.4 j))
 			       (%idx0  (f64.4+ %eA0 %ti0 %j))
@@ -80,7 +78,6 @@
                      (%sum0  (f64.4/ (f64.4 src-0) %eAt0))
 		     (%sum1  (f64.4/ (f64.4 src-0) %eAt1)))
 	        (loop for j of-type u32 from 1 below length
-                      for src-j of-type f64 = (aref src j)
 		      do (let* ((src-j  (aref src j))
                                 (%j     (f64.4 j))
                                 (%idx0  (f64.4+ %eAt0 %ti0 %j))

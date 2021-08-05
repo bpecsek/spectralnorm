@@ -73,7 +73,7 @@ static inline void kernel(__m256d u, __m256d s[4], __m256d r[4]) {
     }
 }
 
-static void eval_A_times_u(int n, double *__restrict__ u, double *__restrict__ Au) {
+static void eval_A_times_u(int n, double *u, double *Au) {
     // force static schedule since each chunk performs equal amounts of work
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < n; i += 4) {
@@ -111,7 +111,7 @@ static void eval_A_times_u(int n, double *__restrict__ u, double *__restrict__ A
 }
 
 // same as above except indices of A flipped (transposed)
-static void eval_At_times_u(int n, double *__restrict__ u, double *__restrict__ Au) {
+static void eval_At_times_u(int n, double *u, double *Au) {
     #pragma omp parallel for schedule(static)
     for (int i = 0; i < n; i += 4) {
         __m256d s[4];
@@ -143,7 +143,7 @@ static void eval_At_times_u(int n, double *__restrict__ u, double *__restrict__ 
     Au[n+2] = 0.0;
 }
 
-static void eval_AtA_times_u(int n, double *__restrict__ u, double *__restrict__ AtAu) {
+static void eval_AtA_times_u(int n, double *u, double *AtAu) {
     double v[n+3] __attribute__((aligned(sizeof(__m256d))));
 
     eval_A_times_u(n, u, v);

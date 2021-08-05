@@ -45,12 +45,12 @@
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 4
+  (loop for i from begin below end by 4
         do (let* ((%src-0 (f64.4 (aref src 0)))
                   (%ti    (f64.4+ (f64.4 i) (make-f64.4 0 1 2 3)))
                   (%eA    (eval-A %ti (f64.4 0)))
 		  (%sum   (f64.4/ %src-0 %eA)))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
 		   do (let ((src-j (aref src j))
                             (%idx (f64.4+ %eA %ti (f64.4 j))))
 			(setf %eA %idx)
@@ -58,12 +58,12 @@
 	     (setf (f64.4-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 4
+  (loop for i from begin below end by 4
         do (let* ((%src-0 (f64.4 (aref src 0)))
                   (%ti    (f64.4+ (f64.4 i) (make-f64.4 1 2 3 4)))
                   (%eAt   (eval-A (f64.4 0) (f64.4- %ti)))
 		  (%sum   (f64.4/ %src-0 %eAt)))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
                    do (let ((src-j (aref src j))
                             (%idx (f64.4+ %eAt %ti (f64.4 j))))
 			(setf %eAt %idx)
@@ -82,7 +82,7 @@
   (declare (optimize (speed 0)))
   (let* ((n    (truncate (- end start) (get-thread-count)))
          (step (- n (mod n 2))))
-    (loop for i of-type u32 from start below end by step
+    (loop for i from start below end by step
           collecting (let ((start i)
                            (end (min end (+ i step))))
                        (sb-thread:make-thread

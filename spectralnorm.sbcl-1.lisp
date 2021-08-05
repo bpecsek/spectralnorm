@@ -45,12 +45,12 @@
 (declaim (ftype (function (f64vec f64vec u32 u32 u32) null)
                 eval-A-times-u eval-At-times-u))
 (defun eval-A-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 2
+  (loop for i from begin below end by 2
         do (let* ((%src-0 (f64.2 (aref src 0)))
                   (%ti    (f64.2+ (f64.2 i) (make-f64.2 0 1)))
                   (%eA    (eval-A %ti (f64.2 0)))
 		  (%sum   (f64.2/ %src-0 %eA)))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
 		   do (let* ((src-j (aref src j))
                              (%idx (f64.2+ %eA %ti (f64.2 j))))
 			(setf %eA %idx)
@@ -58,12 +58,12 @@
 	     (setf (f64.2-aref dst i) %sum))))
 
 (defun eval-At-times-u (src dst begin end length)
-  (loop for i of-type u32 from begin below end by 2
+  (loop for i from begin below end by 2
         do (let* ((%src-0 (f64.2 (aref src 0)))
                   (%ti    (f64.2+ (f64.2 i) (make-f64.2 1 2)))
                   (%eAt   (eval-A (f64.2 0) (f64.2- %ti)))
                   (%sum   (f64.2/ %src-0 %eAt)))
-	     (loop for j of-type u32 from 1 below length
+	     (loop for j from 1 below length
                    do (let* ((src-j (aref src j))
                              (%idx (f64.2+ %eAt %ti (f64.2 j))))
 			(setf %eAt %idx)
@@ -112,13 +112,14 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (let ((sumvb 0d0)
-          (sumvv 0d0))
-      (loop for i below n
-            for aref-v-i of-type f64 = (aref v i)
-            do (incf sumvb (the f64 (* (aref u i) aref-v-i)))
-               (incf sumvv (the f64 (* aref-v-i aref-v-i))))
-      (format t "~11,9F~%" (sqrt (the f64 (/ sumvb sumvv)))))))
+    (loop with sumvb of-type f64 = 0d0
+          with sumvv of-type f64 = 0d0
+          for i below n
+          for aref-v-i of-type f64 = (aref v i)
+          do (let ((aref-v-i (aref v i)))
+               (incf sumvb (* (aref u i) aref-v-i))
+               (incf sumvv (* aref-v-i aref-v-i)))
+          finally (format t "~11,9F~%" (sqrt (the f64 (/ sumvb sumvv)))))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
