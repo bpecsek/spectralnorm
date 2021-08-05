@@ -103,7 +103,7 @@
 	(execute-parallel start end (lambda (start end)
 				      (eval-At-times-u tmp dst start end N)))))
 
-(declaim (ftype (function (u32) null) spectralnorm))
+(declaim (ftype (function (u32) f64) spectralnorm))
 (defun spectralnorm (n)
   (let ((u   (make-array (1+ n) :element-type 'f64 :initial-element 1d0))
         (v   (make-array (1+ n) :element-type 'f64))
@@ -112,18 +112,17 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 N N)
       (eval-AtA-times-u v u tmp 0 N N))
-    (loop with sumvb of-type f64 = 0d0
-          with sumvv of-type f64 = 0d0
-          for i below n
-          for aref-v-i of-type f64 = (aref v i)
-          do (let ((aref-v-i (aref v i)))
-               (incf sumvb (* (aref u i) aref-v-i))
-               (incf sumvv (* aref-v-i aref-v-i)))
-          finally (format t "~11,9F~%" (sqrt (the f64 (/ sumvb sumvv)))))))
+    (let ((sumvb 0d0)
+          (sumvv 0d0))
+      (loop for i below n
+            for aref-v-i of-type f64 = (aref v i)
+            do (incf sumvb (the f64 (* (aref u i) aref-v-i)))
+               (incf sumvv (the f64 (* aref-v-i aref-v-i))))
+      (sqrt (the f64 (/ sumvb sumvv))))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
   (let ((n (or n-supplied (parse-integer (second sb-ext::*posix-argv*)))))
     (if (< n 16)
         (error "The supplied value of 'n' must be at least 16")
-        (spectralnorm n))))
+        (format t "~11,9F~%" (spectralnorm n)))))
