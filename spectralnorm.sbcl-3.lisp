@@ -127,13 +127,7 @@
     (loop repeat 10 do
       (eval-AtA-times-u u v tmp 0 n n)
       (eval-AtA-times-u v u tmp 0 n n))
-    (let ((sumvb 0d0)
-          (sumvv 0d0))
-      (loop for i below n
-            for aref-v-i of-type f64 = (aref v i)
-            do (incf sumvb (the f64 (* (aref u i) aref-v-i)))
-               (incf sumvv (the f64 (* aref-v-i aref-v-i))))
-      (sqrt (the f64 (/ sumvb sumvv))))))
+    (sqrt (/ (f64.2-vdot u v) (f64.2-vdot v v)))))
 
 (declaim (ftype (function (&optional u32) null) main))
 (defun main (&optional (n-supplied 5500))
