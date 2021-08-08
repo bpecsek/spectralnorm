@@ -9,7 +9,7 @@
 // Converted to AVX by Tomas Wain
 
 // g++ -pipe -O3  -fomit-frame-pointer -march=native -fopenmp -mavx2 \
-// ./spectralnorm.cpp-7.c++ -o spectralnorm.gpp-7.c++.o && \
+// spectralnorm.cpp-7.c++ -o spectralnorm.gpp-7.c++.o && \
 // g++ spectralnorm.gpp-7.c++.o -o spectralnorm.gpp-7.gpp_run -fopenmp
 
 #include <cmath>
