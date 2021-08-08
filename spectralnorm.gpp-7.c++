@@ -74,8 +74,7 @@ int GetThreadCount() {
 }
 
 double spectral_game(int N) {
-    __attribute__((aligned(32))) double u[N+3];
-    __attribute__((aligned(32))) double v[N+3], tmp[N+3];
+    __attribute__((aligned(32))) double u[N+3], v[N+3], tmp[N+3];
 
     double vBv = 0.0;
     double vv = 0.0;
