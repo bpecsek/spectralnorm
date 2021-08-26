@@ -1,0 +1,8 @@
+("quicklisp" .
+ (:class qlot/source/dist:source-dist
+  :initargs (:distribution "http://beta.quicklisp.org/dist/quicklisp.txt" :%version :latest)
+  :version "2021-08-07"))
+("sb-simd" .
+ (:class qlot/source/git:source-git
+  :initargs (:remote-url "https://github.com/marcoheisig/sb-simd.git")
+  :version "git-29a212dbf0408d0706f5c79f42e1f31eb32b8371"))
